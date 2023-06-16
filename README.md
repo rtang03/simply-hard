@@ -7,7 +7,8 @@ Simply for funs and skill enhancement, here builds the simple application in har
 SEND SOMETHING TO OTHERS
 
 ### Feature
-- Send [something] at custom CLI
+
+-   Send [something] at custom CLI
 
 ### Construct
 
@@ -16,6 +17,11 @@ SEND SOMETHING TO OTHERS
 
 ### Approach
 
-### Lesson learnt
+### Learning objectives
 
-### Reference
+-   use of AI assisted coding
+-   scaffolded rust implementation
+
+### Reference info
+
+-   [Writing CLI App in rust](https://www.youtube.com/watch?v=XYkiwsplDTg)
