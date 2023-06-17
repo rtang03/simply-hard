@@ -19,7 +19,7 @@ SEND SOMETHING TO OTHERS
 
 ### Learning objectives
 
--   use of AI assisted coding
+-   uses of crates: config
 -   scaffolded rust implementation
 
 ### Reference info

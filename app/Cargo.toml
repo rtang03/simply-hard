@@ -1,8 +1,32 @@
 [package]
 name = "app"
 version = "0.1.0"
+description = "Simply Hard"
+homepage = "https://github.com/rtang03/simply-hard"
+repository = "https://github.com/rtang03/simply-hard"
+keywords = ["config"]
+authors = ["Ross Tang <https://github.com/rtang03/rtang03>"]
+categories = ["config"]
+readme = "README.md"
 edition = "2021"
+license = "MIT/Apache License"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# See https://doc.rust-lang.org/cargo/reference/cargo-targets.html#configuring-a-target
+[lib]
+name = "settings"
+doc = true
+doctest = true
+path = "src/settings/mod.rs"
+
 [dependencies]
+clap = "4.3.0"
+config = "0.13.3"
+notify = "6.0.0"
+serde = "1.0.163"
+serde_json = "1.0.96"
+
+[dev-dependencies]
+glob = "0.3"
+log = { version = "0.4", features = ["serde"] }
