@@ -1,7 +1,9 @@
 # Done
 
-- Global Settings
+-   Global Settings
 
 # Todo
 
-- Add log
+-   Logging
+-   Graceful shutdown
+-   Async test

@@ -2,11 +2,11 @@ extern crate config;
 
 use config::{Config, Environment, File};
 use notify::{event::ModifyKind, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use std::{collections::HashMap, path::Path, sync::Arc, time::Duration};
+use std::{collections::HashMap, path::Path, time::Duration};
 use tokio::sync::{mpsc, RwLock};
 
 lazy_static::lazy_static! {
-    pub static ref GLOBAL_SETTINGS: Settings<Arc<RwLock<Config>>> = Settings::new();
+    pub static ref GLOBAL_SETTINGS: Settings<RwLock<Config>> = Settings::new();
 }
 
 // DEVELOPER NOTE
@@ -35,7 +35,7 @@ lazy_static::lazy_static! {
 ///    assert!(s.0.blocking_read().clone().try_deserialize::<HashMap<String, String>>().is_ok());
 /// ```
 #[derive(Debug, Default)]
-pub struct Settings<T = Arc<RwLock<Config>>>(pub T);
+pub struct Settings<T = RwLock<Config>>(pub T);
 
 pub static ENV_FILENAME: &str = "env.toml";
 
@@ -62,7 +62,7 @@ impl Settings {
     pub fn new() -> Self {
         let config = Self::load_config();
 
-        Self(Arc::new(RwLock::new(config)))
+        Self(RwLock::new(config))
     }
 
     pub async fn print_config(prefix: &str) {
@@ -123,7 +123,6 @@ impl Settings {
                 }
             }
         }
-
         Ok(())
     }
 }
