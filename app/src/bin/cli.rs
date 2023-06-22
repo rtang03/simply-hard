@@ -55,13 +55,13 @@ async fn main() -> app::Result<()> {
     tracing_subscriber::fmt::try_init()?;
 
     // Parse command line arguments
-    // let cli = Cli::parse();
+    let cli = Cli::parse();
 
-    // match cli.command {
-    //     Command::Ping { msg } => {
-    //         println!("echo {:?}", msg);
-    //     }
-    // }
+    match cli.command {
+        Command::Ping { msg } => {
+            println!("echo {:?}", msg);
+        }
+    }
 
     let mut client = BitcoinClient::connect("http://[::1]:50051").await?;
 

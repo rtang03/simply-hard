@@ -2,6 +2,7 @@ pub mod settings;
 pub mod cmd;
 mod shutdown;
 pub mod clients;
+pub mod datastream;
 
 pub use settings::Settings;
 

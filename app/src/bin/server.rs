@@ -1,42 +1,73 @@
 // DEVELOPMENT NOTE:
 // https://www.youtube.com/watch?v=JkSa-qA2jnY&t=106s
+// https://github.com/hyperium/tonic/blob/master/examples/src/streaming/server.rs
 //
 // cargo build --release --bin simply-server
 // cargo run --bin simply-server
-//
+// ./simply-server --port 50051
 
 use app::DEFAULT_PORT;
 use clap::Parser;
-use payments::bitcoin_server::{Bitcoin, BitcoinServer};
-use payments::{BtcPaymentRequest, BtcPaymentResponse};
-use tonic::{transport::Server, Request, Response, Status};
-use tracing::Level;
-// use tracing::info;
+use futures::Stream;
+use gupload::gupload_service_server::{GuploadService, GuploadServiceServer};
+use gupload::{
+    Chunk, FileRequest, FileResponse, HealthCheckRequest, HealthCheckResponse, UploadStatus,
+};
+use std::net::ToSocketAddrs;
+use std::pin::Pin;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
+use tonic::{transport::Server, Request, Response, Status, Streaming};
+use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
-pub mod payments {
-    tonic::include_proto!("payments");
+mod gupload {
+    include!("../gupload.rs");
 }
 
 #[derive(Debug, Default)]
-pub struct BitcoinService {}
+pub struct GuploadServiceImpl {}
+
+type ResponseStream = Pin<Box<dyn Stream<Item = Result<FileResponse, Status>> + Send>>;
 
 #[tonic::async_trait]
-impl Bitcoin for BitcoinService {
-    async fn send_payment(
+impl GuploadService for GuploadServiceImpl {
+    type DownloadStream = ResponseStream;
+
+    async fn upload(
         &self,
-        request: Request<BtcPaymentRequest>,
-    ) -> Result<Response<BtcPaymentResponse>, Status> {
-        println!("Got a payment request: {:?}", request);
+        request: Request<Streaming<Chunk>>,
+    ) -> Result<Response<UploadStatus>, Status> {
+        let number_of_teams: i32 = 3;
+        info!(
+            number_of_teams,
+            "We've got {} upload request!", number_of_teams
+        );
+        Ok(Response::new(UploadStatus {
+            message: "OK".to_owned(),
+            code: 0,
+        }))
+    }
 
-        let req = request.into_inner();
+    async fn download(
+        &self,
+        request: Request<FileRequest>,
+    ) -> Result<Response<Self::DownloadStream>, Status> {
+        let (tx, rx) = mpsc::channel(128);
+        let output_stream = ReceiverStream::new(rx);
+        Ok(Response::new(
+            Box::pin(output_stream) as Self::DownloadStream
+        ))
+    }
 
-        let reply = BtcPaymentResponse {
-            successful: true,
-            message: format!("Sent {}Btc to {}.", req.amount, req.to_add),
-        };
-
-        Ok(Response::new(reply))
+    async fn check(
+        &self,
+        request: Request<HealthCheckRequest>,
+    ) -> Result<Response<HealthCheckResponse>, Status> {
+        Ok(Response::new(HealthCheckResponse {
+            status: 0,
+            received_at: "some timestamp".to_owned(),
+        }))
     }
 }
 
@@ -60,19 +91,22 @@ async fn main() -> app::Result<()> {
 
     // use that subscriber to process traces emitted after this point
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-    // let number_of_teams: i32 = 3;
-    // info!(number_of_teams, "We've got {} teams!", number_of_teams);
 
-    // let cli = Cli::parse();
-    // let port = cli.port.unwrap_or(DEFAULT_PORT);
-
-    let addr = "[::1]:50051".parse()?;
-    let btc_service = BitcoinService::default();
+    let cli = Cli::parse();
+    let port = cli.port.unwrap_or(DEFAULT_PORT);
+    let gupload = GuploadServiceImpl::default();
 
     Server::builder()
-        .add_service(BitcoinServer::new(btc_service))
-        .serve(addr)
-        .await?;
+        .add_service(GuploadServiceServer::new(gupload))
+        .serve(
+            format!("[::1]:{}", port)
+                .to_socket_addrs()
+                .unwrap()
+                .next()
+                .unwrap(),
+        )
+        .await
+        .unwrap();
 
     Ok(())
 }
