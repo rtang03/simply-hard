@@ -11,6 +11,6 @@ pub struct Ping {
 impl Ping {
     /// Create a new `Ping` command with optional `msg`.
     pub fn new(msg: String) -> Self {
-        Ping { msg }
+        Self { msg }
     }
 }

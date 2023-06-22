@@ -8,12 +8,12 @@
 
 use app::DEFAULT_PORT;
 use clap::{Parser, Subcommand};
-use payments::bitcoin_client::BitcoinClient;
-use payments::BtcPaymentRequest;
+// use payments::bitcoin_client::BitcoinClient;
+// use payments::BtcPaymentRequest;
 
-pub mod payments {
-    tonic::include_proto!("payments");
-}
+// pub mod payments {
+//     tonic::include_proto!("payments");
+// }
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -63,17 +63,14 @@ async fn main() -> app::Result<()> {
         }
     }
 
-    let mut client = BitcoinClient::connect("http://[::1]:50051").await?;
-
-    let request = tonic::Request::new(BtcPaymentRequest {
-        from_add: "123456".to_owned(),
-        to_add: "789".to_owned(),
-        amount: 22,
-    });
-
-    let response = client.send_payment(request).await?;
-
-    println!("Response: {:?}", response);
+    // let mut client = BitcoinClient::connect("http://[::1]:50051").await?;
+    // let request = tonic::Request::new(BtcPaymentRequest {
+    //     from_add: "123456".to_owned(),
+    //     to_add: "789".to_owned(),
+    //     amount: 22,
+    // });
+    // let response = client.send_payment(request).await?;
+    // println!("Response: {:?}", response);
 
     Ok(())
 }

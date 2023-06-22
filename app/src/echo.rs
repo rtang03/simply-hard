@@ -1,151 +1,30 @@
+/// EchoRequest is the request for echo.
+#[derive(Hash)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Chunk {
-    #[prost(oneof = "chunk::Data", tags = "1, 2")]
-    pub data: ::core::option::Option<chunk::Data>,
-}
-/// Nested message and enum types in `Chunk`.
-pub mod chunk {
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Oneof)]
-    pub enum Data {
-        #[prost(bytes, tag = "1")]
-        Content(::prost::alloc::vec::Vec<u8>),
-        #[prost(message, tag = "2")]
-        Info(super::UploadFileInfo),
-    }
-}
-/// Download
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FileRequest {
-    #[prost(string, tag = "1")]
-    pub filename: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FileResponse {
-    #[prost(bytes = "vec", tag = "1")]
-    pub shard: ::prost::alloc::vec::Vec<u8>,
-}
-/// Upload
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UploadFileInfo {
-    #[prost(string, tag = "1")]
-    pub filename: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub file_type: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UploadStatus {
+pub struct EchoRequest {
     #[prost(string, tag = "1")]
     pub message: ::prost::alloc::string::String,
-    #[prost(enumeration = "StatusCode", tag = "2")]
-    pub code: i32,
 }
+/// EchoResponse is the response for echo.
+#[derive(Hash)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct HealthCheckRequest {
+pub struct EchoResponse {
     #[prost(string, tag = "1")]
-    pub service: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub ping_at: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
-    pub label: ::prost::alloc::string::String,
-    #[prost(string, tag = "4")]
-    pub counter: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct HealthCheckResponse {
-    #[prost(enumeration = "health_check_response::ServingStatus", tag = "1")]
-    pub status: i32,
-    #[prost(string, tag = "2")]
-    pub received_at: ::prost::alloc::string::String,
-}
-/// Nested message and enum types in `HealthCheckResponse`.
-pub mod health_check_response {
-    #[derive(
-        Clone,
-        Copy,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-        PartialOrd,
-        Ord,
-        ::prost::Enumeration
-    )]
-    #[repr(i32)]
-    pub enum ServingStatus {
-        Unknown = 0,
-        Serving = 1,
-        NotServing = 2,
-    }
-    impl ServingStatus {
-        /// String value of the enum field names used in the ProtoBuf definition.
-        ///
-        /// The values are not transformed in any way and thus are considered stable
-        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-        pub fn as_str_name(&self) -> &'static str {
-            match self {
-                ServingStatus::Unknown => "UNKNOWN",
-                ServingStatus::Serving => "SERVING",
-                ServingStatus::NotServing => "NOT_SERVING",
-            }
-        }
-        /// Creates an enum from field names used in the ProtoBuf definition.
-        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-            match value {
-                "UNKNOWN" => Some(Self::Unknown),
-                "SERVING" => Some(Self::Serving),
-                "NOT_SERVING" => Some(Self::NotServing),
-                _ => None,
-            }
-        }
-    }
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum StatusCode {
-    Unknown = 0,
-    Ok = 1,
-    Failed = 2,
-}
-impl StatusCode {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            StatusCode::Unknown => "Unknown",
-            StatusCode::Ok => "Ok",
-            StatusCode::Failed => "Failed",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "Unknown" => Some(Self::Unknown),
-            "Ok" => Some(Self::Ok),
-            "Failed" => Some(Self::Failed),
-            _ => None,
-        }
-    }
+    pub message: ::prost::alloc::string::String,
 }
 /// Generated client implementations.
-pub mod gupload_service_client {
+pub mod echo_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
+    /// Echo is the echo service.
     #[derive(Debug, Clone)]
-    pub struct GuploadServiceClient<T> {
+    pub struct EchoClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl GuploadServiceClient<tonic::transport::Channel> {
+    impl EchoClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -156,7 +35,7 @@ pub mod gupload_service_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> GuploadServiceClient<T>
+    impl<T> EchoClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::Error: Into<StdError>,
@@ -174,7 +53,7 @@ pub mod gupload_service_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> GuploadServiceClient<InterceptedService<T, F>>
+        ) -> EchoClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -188,7 +67,7 @@ pub mod gupload_service_client {
                 http::Request<tonic::body::BoxBody>,
             >>::Error: Into<StdError> + Send + Sync,
         {
-            GuploadServiceClient::new(InterceptedService::new(inner, interceptor))
+            EchoClient::new(InterceptedService::new(inner, interceptor))
         }
         /// Compress requests with the given encoding.
         ///
@@ -221,10 +100,34 @@ pub mod gupload_service_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        pub async fn upload(
+        /// UnaryEcho is unary echo.
+        pub async fn unary_echo(
             &mut self,
-            request: impl tonic::IntoStreamingRequest<Message = super::Chunk>,
-        ) -> std::result::Result<tonic::Response<super::UploadStatus>, tonic::Status> {
+            request: impl tonic::IntoRequest<super::EchoRequest>,
+        ) -> std::result::Result<tonic::Response<super::EchoResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/echo.Echo/UnaryEcho");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("echo.Echo", "UnaryEcho"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// ServerStreamingEcho is server side streaming.
+        pub async fn server_streaming_echo(
+            &mut self,
+            request: impl tonic::IntoRequest<super::EchoRequest>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::EchoResponse>>,
+            tonic::Status,
+        > {
             self.inner
                 .ready()
                 .await
@@ -236,18 +139,42 @@ pub mod gupload_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/gupload.GuploadService/Upload",
+                "/echo.Echo/ServerStreamingEcho",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("echo.Echo", "ServerStreamingEcho"));
+            self.inner.server_streaming(req, path, codec).await
+        }
+        /// ClientStreamingEcho is client side streaming.
+        pub async fn client_streaming_echo(
+            &mut self,
+            request: impl tonic::IntoStreamingRequest<Message = super::EchoRequest>,
+        ) -> std::result::Result<tonic::Response<super::EchoResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/echo.Echo/ClientStreamingEcho",
             );
             let mut req = request.into_streaming_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("gupload.GuploadService", "Upload"));
+                .insert(GrpcMethod::new("echo.Echo", "ClientStreamingEcho"));
             self.inner.client_streaming(req, path, codec).await
         }
-        pub async fn download(
+        /// BidirectionalStreamingEcho is bidi streaming.
+        pub async fn bidirectional_streaming_echo(
             &mut self,
-            request: impl tonic::IntoRequest<super::FileRequest>,
+            request: impl tonic::IntoStreamingRequest<Message = super::EchoRequest>,
         ) -> std::result::Result<
-            tonic::Response<tonic::codec::Streaming<super::FileResponse>>,
+            tonic::Response<tonic::codec::Streaming<super::EchoResponse>>,
             tonic::Status,
         > {
             self.inner
@@ -261,71 +188,64 @@ pub mod gupload_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/gupload.GuploadService/Download",
+                "/echo.Echo/BidirectionalStreamingEcho",
             );
-            let mut req = request.into_request();
+            let mut req = request.into_streaming_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("gupload.GuploadService", "Download"));
-            self.inner.server_streaming(req, path, codec).await
-        }
-        pub async fn check(
-            &mut self,
-            request: impl tonic::IntoRequest<super::HealthCheckRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::HealthCheckResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/gupload.GuploadService/Check",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("gupload.GuploadService", "Check"));
-            self.inner.unary(req, path, codec).await
+                .insert(GrpcMethod::new("echo.Echo", "BidirectionalStreamingEcho"));
+            self.inner.streaming(req, path, codec).await
         }
     }
 }
 /// Generated server implementations.
-pub mod gupload_service_server {
+pub mod echo_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    /// Generated trait containing gRPC methods that should be implemented for use with GuploadServiceServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with EchoServer.
     #[async_trait]
-    pub trait GuploadService: Send + Sync + 'static {
-        async fn upload(
+    pub trait Echo: Send + Sync + 'static {
+        /// UnaryEcho is unary echo.
+        async fn unary_echo(
             &self,
-            request: tonic::Request<tonic::Streaming<super::Chunk>>,
-        ) -> std::result::Result<tonic::Response<super::UploadStatus>, tonic::Status>;
-        /// Server streaming response type for the Download method.
-        type DownloadStream: futures_core::Stream<
-                Item = std::result::Result<super::FileResponse, tonic::Status>,
+            request: tonic::Request<super::EchoRequest>,
+        ) -> std::result::Result<tonic::Response<super::EchoResponse>, tonic::Status>;
+        /// Server streaming response type for the ServerStreamingEcho method.
+        type ServerStreamingEchoStream: futures_core::Stream<
+                Item = std::result::Result<super::EchoResponse, tonic::Status>,
             >
             + Send
             + 'static;
-        async fn download(
+        /// ServerStreamingEcho is server side streaming.
+        async fn server_streaming_echo(
             &self,
-            request: tonic::Request<super::FileRequest>,
-        ) -> std::result::Result<tonic::Response<Self::DownloadStream>, tonic::Status>;
-        async fn check(
-            &self,
-            request: tonic::Request<super::HealthCheckRequest>,
+            request: tonic::Request<super::EchoRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::HealthCheckResponse>,
+            tonic::Response<Self::ServerStreamingEchoStream>,
+            tonic::Status,
+        >;
+        /// ClientStreamingEcho is client side streaming.
+        async fn client_streaming_echo(
+            &self,
+            request: tonic::Request<tonic::Streaming<super::EchoRequest>>,
+        ) -> std::result::Result<tonic::Response<super::EchoResponse>, tonic::Status>;
+        /// Server streaming response type for the BidirectionalStreamingEcho method.
+        type BidirectionalStreamingEchoStream: futures_core::Stream<
+                Item = std::result::Result<super::EchoResponse, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        /// BidirectionalStreamingEcho is bidi streaming.
+        async fn bidirectional_streaming_echo(
+            &self,
+            request: tonic::Request<tonic::Streaming<super::EchoRequest>>,
+        ) -> std::result::Result<
+            tonic::Response<Self::BidirectionalStreamingEchoStream>,
             tonic::Status,
         >;
     }
+    /// Echo is the echo service.
     #[derive(Debug)]
-    pub struct GuploadServiceServer<T: GuploadService> {
+    pub struct EchoServer<T: Echo> {
         inner: _Inner<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
@@ -333,7 +253,7 @@ pub mod gupload_service_server {
         max_encoding_message_size: Option<usize>,
     }
     struct _Inner<T>(Arc<T>);
-    impl<T: GuploadService> GuploadServiceServer<T> {
+    impl<T: Echo> EchoServer<T> {
         pub fn new(inner: T) -> Self {
             Self::from_arc(Arc::new(inner))
         }
@@ -385,9 +305,9 @@ pub mod gupload_service_server {
             self
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for GuploadServiceServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for EchoServer<T>
     where
-        T: GuploadService,
+        T: Echo,
         B: Body + Send + 'static,
         B::Error: Into<StdError> + Send + 'static,
     {
@@ -403,24 +323,22 @@ pub mod gupload_service_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/gupload.GuploadService/Upload" => {
+                "/echo.Echo/UnaryEcho" => {
                     #[allow(non_camel_case_types)]
-                    struct UploadSvc<T: GuploadService>(pub Arc<T>);
-                    impl<
-                        T: GuploadService,
-                    > tonic::server::ClientStreamingService<super::Chunk>
-                    for UploadSvc<T> {
-                        type Response = super::UploadStatus;
+                    struct UnaryEchoSvc<T: Echo>(pub Arc<T>);
+                    impl<T: Echo> tonic::server::UnaryService<super::EchoRequest>
+                    for UnaryEchoSvc<T> {
+                        type Response = super::EchoResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<tonic::Streaming<super::Chunk>>,
+                            request: tonic::Request<super::EchoRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { (*inner).upload(request).await };
+                            let fut = async move { (*inner).unary_echo(request).await };
                             Box::pin(fut)
                         }
                     }
@@ -431,7 +349,7 @@ pub mod gupload_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = UploadSvc(inner);
+                        let method = UnaryEchoSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -442,30 +360,32 @@ pub mod gupload_service_server {
                                 max_decoding_message_size,
                                 max_encoding_message_size,
                             );
-                        let res = grpc.client_streaming(method, req).await;
+                        let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)
                 }
-                "/gupload.GuploadService/Download" => {
+                "/echo.Echo/ServerStreamingEcho" => {
                     #[allow(non_camel_case_types)]
-                    struct DownloadSvc<T: GuploadService>(pub Arc<T>);
+                    struct ServerStreamingEchoSvc<T: Echo>(pub Arc<T>);
                     impl<
-                        T: GuploadService,
-                    > tonic::server::ServerStreamingService<super::FileRequest>
-                    for DownloadSvc<T> {
-                        type Response = super::FileResponse;
-                        type ResponseStream = T::DownloadStream;
+                        T: Echo,
+                    > tonic::server::ServerStreamingService<super::EchoRequest>
+                    for ServerStreamingEchoSvc<T> {
+                        type Response = super::EchoResponse;
+                        type ResponseStream = T::ServerStreamingEchoStream;
                         type Future = BoxFuture<
                             tonic::Response<Self::ResponseStream>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::FileRequest>,
+                            request: tonic::Request<super::EchoRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { (*inner).download(request).await };
+                            let fut = async move {
+                                (*inner).server_streaming_echo(request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -476,7 +396,7 @@ pub mod gupload_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = DownloadSvc(inner);
+                        let method = ServerStreamingEchoSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -492,24 +412,26 @@ pub mod gupload_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/gupload.GuploadService/Check" => {
+                "/echo.Echo/ClientStreamingEcho" => {
                     #[allow(non_camel_case_types)]
-                    struct CheckSvc<T: GuploadService>(pub Arc<T>);
+                    struct ClientStreamingEchoSvc<T: Echo>(pub Arc<T>);
                     impl<
-                        T: GuploadService,
-                    > tonic::server::UnaryService<super::HealthCheckRequest>
-                    for CheckSvc<T> {
-                        type Response = super::HealthCheckResponse;
+                        T: Echo,
+                    > tonic::server::ClientStreamingService<super::EchoRequest>
+                    for ClientStreamingEchoSvc<T> {
+                        type Response = super::EchoResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::HealthCheckRequest>,
+                            request: tonic::Request<tonic::Streaming<super::EchoRequest>>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { (*inner).check(request).await };
+                            let fut = async move {
+                                (*inner).client_streaming_echo(request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -520,7 +442,7 @@ pub mod gupload_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = CheckSvc(inner);
+                        let method = ClientStreamingEchoSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -531,7 +453,52 @@ pub mod gupload_service_server {
                                 max_decoding_message_size,
                                 max_encoding_message_size,
                             );
-                        let res = grpc.unary(method, req).await;
+                        let res = grpc.client_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/echo.Echo/BidirectionalStreamingEcho" => {
+                    #[allow(non_camel_case_types)]
+                    struct BidirectionalStreamingEchoSvc<T: Echo>(pub Arc<T>);
+                    impl<T: Echo> tonic::server::StreamingService<super::EchoRequest>
+                    for BidirectionalStreamingEchoSvc<T> {
+                        type Response = super::EchoResponse;
+                        type ResponseStream = T::BidirectionalStreamingEchoStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<tonic::Streaming<super::EchoRequest>>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).bidirectional_streaming_echo(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = BidirectionalStreamingEchoSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)
@@ -551,7 +518,7 @@ pub mod gupload_service_server {
             }
         }
     }
-    impl<T: GuploadService> Clone for GuploadServiceServer<T> {
+    impl<T: Echo> Clone for EchoServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -563,7 +530,7 @@ pub mod gupload_service_server {
             }
         }
     }
-    impl<T: GuploadService> Clone for _Inner<T> {
+    impl<T: Echo> Clone for _Inner<T> {
         fn clone(&self) -> Self {
             Self(Arc::clone(&self.0))
         }
@@ -573,7 +540,7 @@ pub mod gupload_service_server {
             write!(f, "{:?}", self.0)
         }
     }
-    impl<T: GuploadService> tonic::server::NamedService for GuploadServiceServer<T> {
-        const NAME: &'static str = "gupload.GuploadService";
+    impl<T: Echo> tonic::server::NamedService for EchoServer<T> {
+        const NAME: &'static str = "echo.Echo";
     }
 }
