@@ -1,11 +1,11 @@
 #[derive(Debug, Default)]
 pub struct Reset {
-    msg: String,
+    _msg: String,
 }
 
 impl Reset {
     /// Create a new `Ping` command with optional `msg`.
-    pub fn new(msg: String) -> Self {
-        Self { msg }
+    pub fn new(_msg: String) -> Self {
+        Self { _msg }
     }
 }

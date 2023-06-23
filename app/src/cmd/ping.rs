@@ -5,12 +5,12 @@
 /// is still alive, or to measure latency.
 #[derive(Debug, Default)]
 pub struct Ping {
-    msg: String,
+    _msg: String,
 }
 
 impl Ping {
     /// Create a new `Ping` command with optional `msg`.
-    pub fn new(msg: String) -> Self {
-        Self { msg }
+    pub fn new(_msg: String) -> Self {
+        Self { _msg }
     }
 }

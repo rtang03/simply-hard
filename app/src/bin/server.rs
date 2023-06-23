@@ -9,7 +9,6 @@
 
 use app::{protobuffer, server::EchoServer, DEFAULT_PORT};
 use clap::Parser;
-use std::net::ToSocketAddrs;
 use tonic::transport::Server;
 use tracing::{info, info_span, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -17,8 +16,8 @@ use tracing_subscriber::FmtSubscriber;
 #[derive(Parser, Debug)]
 #[clap(name = "simply-server", version, author, about = "Simply server")]
 struct Cli {
-    #[clap(long)]
-    port: Option<u16>,
+    #[clap(long, default_value_t = DEFAULT_PORT)]
+    port: u16,
 }
 
 #[tokio::main]
@@ -35,10 +34,9 @@ async fn main() -> app::Result<()> {
     // use that subscriber to process traces emitted after this point
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
     let cli = Cli::parse();
-    let port = cli.port.unwrap_or(DEFAULT_PORT);
     let server = EchoServer::default();
 
-    info!(message = "Starting server:", port);
+    info!(message = "Starting server:", cli.port);
 
     let graceful_shutdown = async {
         if let Ok(result) = tokio::signal::ctrl_c().await {
@@ -48,19 +46,14 @@ async fn main() -> app::Result<()> {
         }
     };
 
+    let addr = format!("[::1]:{}", cli.port).parse().unwrap();
+
+    info!(message = "Server listening on", ?addr);
+
     let server = Server::builder()
         .trace_fn(|_| info_span!("echo_server"))
         .add_service(protobuffer::echo_server::EchoServer::new(server))
-        .serve_with_shutdown(
-            format!("[::1]:{}", port)
-                .to_socket_addrs()
-                .unwrap()
-                .next()
-                .unwrap(),
-            graceful_shutdown,
-        );
-
-    info!(message = "Server listening on", ?port);
+        .serve_with_shutdown(addr, graceful_shutdown);
 
     server.await?;
 

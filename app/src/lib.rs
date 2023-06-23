@@ -11,7 +11,7 @@ pub use settings::Settings;
 /// Default port that a server listens on.
 ///
 /// Used if no port is specified.
-pub const DEFAULT_PORT: u16 = 6379;
+pub const DEFAULT_PORT: u16 = 50051;
 
 pub mod protobuffer {
     include!("./echo.rs");

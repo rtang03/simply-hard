@@ -6,14 +6,9 @@
 // cargo run --bin simply-cli
 //
 
-use app::DEFAULT_PORT;
+use app::{clients::streaming_echo, protobuffer::echo_client::EchoClient, DEFAULT_PORT};
 use clap::{Parser, Subcommand};
-// use payments::bitcoin_client::BitcoinClient;
-// use payments::BtcPaymentRequest;
-
-// pub mod payments {
-//     tonic::include_proto!("payments");
-// }
+use tracing::info;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -26,9 +21,8 @@ struct Cli {
     #[command(subcommand)]
     command: Command,
 
-    #[clap(name = "hostname", long, default_value = "127.0.0.1")]
-    host: String,
-
+    // #[clap(name = "hostname", long, default_value = "127.0.0.1")]
+    // host: String,
     #[clap(long, default_value_t = DEFAULT_PORT)]
     port: u16,
 }
@@ -37,7 +31,7 @@ struct Cli {
 enum Command {
     /// Ping server
     #[command(arg_required_else_help = true)]
-    Ping { msg: String },
+    StreamEcho { num: usize },
 }
 
 /// Entry point for CLI tool.
@@ -57,20 +51,19 @@ async fn main() -> app::Result<()> {
     // Parse command line arguments
     let cli = Cli::parse();
 
+    // Get the remote address to connect to
+    let addr = format!("http://[::1]:{}", cli.port);
+
+    info!(message = "Connecting to", addr);
+
+    let mut client = EchoClient::connect(addr).await?;
+
     match cli.command {
-        Command::Ping { msg } => {
-            println!("echo {:?}", msg);
+        Command::StreamEcho { num } => {
+            println!("Repeat {} time(s)", num);
+            streaming_echo(&mut client, num).await;
         }
     }
-
-    // let mut client = BitcoinClient::connect("http://[::1]:50051").await?;
-    // let request = tonic::Request::new(BtcPaymentRequest {
-    //     from_add: "123456".to_owned(),
-    //     to_add: "789".to_owned(),
-    //     amount: 22,
-    // });
-    // let response = client.send_payment(request).await?;
-    // println!("Response: {:?}", response);
 
     Ok(())
 }
