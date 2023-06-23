@@ -29,6 +29,7 @@ path = "src/bin/server.rs"
 [dependencies]
 bytes = "1.4.0"
 clap = { version = "4.3.0", features = ["derive"] }
+colored = "2.0.0"
 config = "0.13.3"
 futures = "0.3.28"
 h2 = "0.3.19"

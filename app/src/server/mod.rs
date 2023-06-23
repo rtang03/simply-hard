@@ -1,4 +1,5 @@
 use crate::protobuffer::{self, EchoRequest, EchoResponse};
+use colored::*;
 use std::{io::ErrorKind, pin::Pin, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
@@ -96,7 +97,7 @@ impl protobuffer::echo_server::Echo for EchoServer {
                     }
                 }
             }
-            info!("\tclient disconnected");
+            info!("{}", "\tclient disconnected".red());
         });
 
         let output_stream = ReceiverStream::new(rx);

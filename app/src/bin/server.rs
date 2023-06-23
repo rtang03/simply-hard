@@ -6,9 +6,9 @@
 // cargo build --release --bin simply-server
 // cargo run --bin simply-server
 // ./simply-server --port 50051
-
 use app::{protobuffer, server::EchoServer, DEFAULT_PORT};
 use clap::Parser;
+use colored::*;
 use tonic::transport::Server;
 use tracing::{info, info_span, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -36,8 +36,6 @@ async fn main() -> app::Result<()> {
     let cli = Cli::parse();
     let server = EchoServer::default();
 
-    info!(message = "Starting server:", cli.port);
-
     let graceful_shutdown = async {
         if let Ok(result) = tokio::signal::ctrl_c().await {
             // TODO: add logic
@@ -48,7 +46,7 @@ async fn main() -> app::Result<()> {
 
     let addr = format!("[::1]:{}", cli.port).parse().unwrap();
 
-    info!(message = "Server listening on", ?addr);
+    info!("{}", format!("Server listening on {:?}", addr).blue());
 
     let server = Server::builder()
         .trace_fn(|_| info_span!("echo_server"))

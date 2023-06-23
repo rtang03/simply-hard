@@ -1,2 +1,2 @@
-pub mod client;
-pub use client::streaming_echo;
+mod client;
+pub use client::Client;

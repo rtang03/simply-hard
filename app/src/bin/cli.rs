@@ -6,7 +6,7 @@
 // cargo run --bin simply-cli
 //
 
-use app::{clients::streaming_echo, protobuffer::echo_client::EchoClient, DEFAULT_PORT};
+use app::{clients::Client, DEFAULT_PORT};
 use clap::{Parser, Subcommand};
 use tracing::info;
 
@@ -56,12 +56,15 @@ async fn main() -> app::Result<()> {
 
     info!(message = "Connecting to", addr);
 
-    let mut client = EchoClient::connect(addr).await?;
+    let mut client = match Client::connect(addr).await {
+        Ok(client) => client,
+        Err(_) => panic!("failed to establish connection"),
+    };
 
     match cli.command {
         Command::StreamEcho { num } => {
             println!("Repeat {} time(s)", num);
-            streaming_echo(&mut client, num).await;
+            client.streaming_echo(num).await;
         }
     }
 
