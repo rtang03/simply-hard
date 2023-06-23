@@ -3,8 +3,9 @@ use colored::*;
 use std::time::Duration;
 use tokio_stream::{Stream, StreamExt};
 use tonic::{codegen::StdError, transport::Channel, Request};
-use tracing::instrument;
+use tracing::{info, instrument};
 
+#[derive(Debug)]
 pub struct Client {
     echo_client: EchoClient<Channel>,
 }
@@ -27,13 +28,27 @@ impl Client {
         })
     }
 
+    // NOTE:
+    // #[instrument] appends Client object in the tracing log output in stdout
+    // #[instrument(skip(self))] will disable it
+    // self=Client { echo_client: EchoClient { inner: Grpc { inner: Channel, origin: /, compression_encoding: None, accept_compression_encodings: EnabledCompressionEncodings, max_decoding_message_size: None, max_encoding_message_size: None } } }
     #[instrument(skip(self))]
     pub async fn unary_echo(&mut self) {
         let request = Request::new(EchoRequest {
             message: "foo".into(),
         });
+
+        info!(
+            message = format!("{}", "Sending request".blue()),
+            request = %request.get_ref().message
+        );
+
         let response = self.echo_client.unary_echo(request).await.unwrap();
-        println!("\t{:?}", response);
+
+        info!(
+            message = format!("{}", "Got a response".blue()),
+            response = %response.get_ref().message
+        );
     }
 
     #[instrument(skip(self))]
@@ -47,19 +62,28 @@ impl Client {
             .await
             .unwrap();
 
-        println!("\t{:?}", response);
+        info!(
+            message = format!("{}", "Got a response".blue()),
+            response = %response.get_ref().message
+        );
     }
 
-    // TODO: what is (skip(self)) means?
     /// server side streaming - take num of element and disconnect
     #[instrument(skip(self))]
     pub async fn streaming_echo(&mut self, num: usize) {
+        let request = Request::new(EchoRequest {
+            message: "foo".into(),
+        });
+
+        info!(
+            message = format!("{}", "Sending request".blue()),
+            request = %request.get_ref().message
+        );
+
         // TODO: change the message "foo"
         let stream = self
             .echo_client
-            .server_streaming_echo(EchoRequest {
-                message: "foo".into(),
-            })
+            .server_streaming_echo(request)
             .await
             .unwrap()
             .into_inner();
@@ -74,6 +98,7 @@ impl Client {
     }
 
     /// BidirectionalStreamingEcho is bidi streaming.
+    #[instrument(skip(self))]
     pub async fn bidirectional_streaming_echo(&mut self, num: usize) {
         // input stream
         let in_stream = Self::echo_requests_iter().take(num);
@@ -94,6 +119,8 @@ impl Client {
         }
     }
 
+    /// BidirectionalStreamingEcho is bidi streaming, with throttling
+    #[instrument(skip(self))]
     pub async fn bidirectional_streaming_echo_throttle(&mut self, dur: Duration) {
         let in_stream = Self::echo_requests_iter().throttle(dur);
 

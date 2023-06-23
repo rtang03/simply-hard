@@ -4,7 +4,7 @@ use std::{io::ErrorKind, pin::Pin, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 use tonic::{Request, Response, Status, Streaming};
-use tracing::{error, info};
+use tracing::{error, info, instrument};
 
 fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
     let mut err: &(dyn std::error::Error + 'static) = err_status;
@@ -40,7 +40,7 @@ impl protobuffer::echo_server::Echo for EchoServer {
     type ServerStreamingEchoStream = ResponseStream;
     type BidirectionalStreamingEchoStream = ResponseStream;
 
-    #[tracing::instrument]
+    #[instrument]
     async fn unary_echo(&self, req: Request<EchoRequest>) -> EchoResult<EchoResponse> {
         info!(
             "{}",
@@ -50,7 +50,9 @@ impl protobuffer::echo_server::Echo for EchoServer {
         Ok(Response::new(EchoResponse { message }))
     }
 
-    #[tracing::instrument]
+    // NOTE:
+    // #[instrument] append EchoServer in the tracing log stdout
+    #[instrument]
     async fn client_streaming_echo(
         &self,
         req: Request<Streaming<EchoRequest>>,
@@ -103,7 +105,7 @@ impl protobuffer::echo_server::Echo for EchoServer {
         }
     }
 
-    #[tracing::instrument]
+    #[instrument]
     async fn server_streaming_echo(
         &self,
         req: Request<EchoRequest>,
@@ -152,7 +154,7 @@ impl protobuffer::echo_server::Echo for EchoServer {
         ))
     }
 
-    #[tracing::instrument]
+    #[instrument]
     async fn bidirectional_streaming_echo(
         &self,
         req: Request<Streaming<EchoRequest>>,

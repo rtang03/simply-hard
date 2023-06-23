@@ -9,7 +9,8 @@
 use app::{clients::Client, DEFAULT_PORT};
 use clap::{Parser, Subcommand};
 use colored::*;
-use tracing::info;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -60,7 +61,16 @@ enum Command {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> app::Result<()> {
     // Enable logging
-    tracing_subscriber::fmt::try_init()?;
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .compact()
+        .with_file(false)
+        .with_line_number(true)
+        .with_thread_ids(false)
+        .finish();
+
+    // use that subscriber to process traces emitted after this point
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     // Parse command line arguments
     let cli = Cli::parse();
@@ -68,7 +78,7 @@ async fn main() -> app::Result<()> {
     // Get the remote address to connect to
     let addr = format!("http://[::1]:{}", cli.port);
 
-    info!(message = "Connecting to", addr);
+    info!(message = format!("{}", "Connecting".blue()), addr);
 
     let mut client = match Client::connect(addr).await {
         Ok(client) => client,
