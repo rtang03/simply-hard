@@ -53,10 +53,54 @@ impl protobuffer::echo_server::Echo for EchoServer {
     #[tracing::instrument]
     async fn client_streaming_echo(
         &self,
-        _: Request<Streaming<EchoRequest>>,
+        req: Request<Streaming<EchoRequest>>,
     ) -> EchoResult<EchoResponse> {
-        info!("received request");
-        Err(Status::unimplemented("not implemented"))
+        info!(
+            "{}",
+            "EchoServer::client_streaming_echo; client connected from: {:?req.remote_addr().unwrap()}".blue()
+        );
+        let mut in_stream = req.into_inner();
+        let (tx, mut rx) = mpsc::channel(128);
+
+        tokio::spawn(async move {
+            let mut result = Vec::new();
+            while let Some(item) = in_stream.next().await {
+                match item {
+                    Ok(v) => {
+                        result.push(v.message.to_owned());
+                    }
+                    Err(err) => {
+                        if let Some(io_err) = match_for_io_error(&err) {
+                            if io_err.kind() == ErrorKind::BrokenPipe {
+                                // here you can handle special case when client
+                                // disconnected in unexpected way
+                                error!("{}", "client disconnected: broken pipe".red());
+                                break;
+                            }
+                        }
+                        match tx.send(Err(err)).await {
+                            Ok(_) => (),
+                            Err(_err) => break, // response was droped
+                        }
+                    }
+                }
+            }
+            tx.send(Ok(EchoResponse {
+                message: result.join(""),
+            }))
+            .await
+            .expect("working rx error");
+            info!("{}", "stream ended".green());
+        });
+
+        if let Some(res) = rx.recv().await {
+            match res {
+                Ok(echo_response) => Ok(Response::new(echo_response)),
+                Err(_) => Err(Status::unknown("unknown response")),
+            }
+        } else {
+            Err(Status::unknown("unknown response"))
+        }
     }
 
     #[tracing::instrument]
@@ -123,7 +167,7 @@ impl protobuffer::echo_server::Echo for EchoServer {
 
         // this spawn here is required if you want to handle connection error.
         // If we just map `in_stream` and write it back as `out_stream` the `out_stream`
-        // will be drooped when connection error occurs and error will never be propagated
+        // will be droped when connection error occurs and error will never be propagated
         // to mapped version of `in_stream`.
         tokio::spawn(async move {
             while let Some(result) = in_stream.next().await {
@@ -141,7 +185,6 @@ impl protobuffer::echo_server::Echo for EchoServer {
                                 break;
                             }
                         }
-
                         match tx.send(Err(err)).await {
                             Ok(_) => (),
                             Err(_err) => break, // response was droped

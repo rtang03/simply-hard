@@ -39,6 +39,10 @@ enum Command {
     #[command(arg_required_else_help = true)]
     BidiStreamEcho { num: usize },
 
+    /// client side stream, e.g. client-stream-echo 5
+    #[command(arg_required_else_help = true)]
+    ClientStreamEcho { num: usize },
+
     /// unary echo, e.g. unary-echo
     #[command(arg_required_else_help = false)]
     UnaryEcho,
@@ -82,6 +86,10 @@ async fn main() -> app::Result<()> {
         }
         Command::UnaryEcho => {
             client.unary_echo().await;
+        }
+        Command::ClientStreamEcho { num } => {
+            println!("Repeat {} time(s)", num);
+            client.client_streaming_echo(num).await;
         }
     }
 

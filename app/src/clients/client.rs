@@ -27,11 +27,26 @@ impl Client {
         })
     }
 
+    #[instrument(skip(self))]
     pub async fn unary_echo(&mut self) {
         let request = Request::new(EchoRequest {
             message: "foo".into(),
         });
         let response = self.echo_client.unary_echo(request).await.unwrap();
+        println!("\t{:?}", response);
+    }
+
+    #[instrument(skip(self))]
+    pub async fn client_streaming_echo(&mut self, num: usize) {
+        // input stream
+        let in_stream = Self::echo_requests_iter().take(num);
+
+        let response = self
+            .echo_client
+            .client_streaming_echo(in_stream)
+            .await
+            .unwrap();
+
         println!("\t{:?}", response);
     }
 
