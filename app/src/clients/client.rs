@@ -2,7 +2,7 @@ use crate::protobuffer::{echo_client::EchoClient, EchoRequest};
 use colored::*;
 use std::time::Duration;
 use tokio_stream::{Stream, StreamExt};
-use tonic::{codegen::StdError, transport::Channel};
+use tonic::{codegen::StdError, transport::Channel, Request};
 use tracing::instrument;
 
 pub struct Client {
@@ -25,6 +25,14 @@ impl Client {
         tokio_stream::iter(1..usize::MAX).map(|i| EchoRequest {
             message: format!("msg {:02}", i),
         })
+    }
+
+    pub async fn unary_echo(&mut self) {
+        let request = Request::new(EchoRequest {
+            message: "foo".into(),
+        });
+        let response = self.echo_client.unary_echo(request).await.unwrap();
+        println!("\t{:?}", response);
     }
 
     // TODO: what is (skip(self)) means?
@@ -67,7 +75,7 @@ impl Client {
         // TODO: change it a meaningful implementation
         while let Some(received) = resp_stream.next().await {
             let received = received.unwrap();
-            println!("\treceived message: `{}`", received.message);
+            println!("\treceived message: `{}`", received.message.blue());
         }
     }
 
@@ -84,7 +92,7 @@ impl Client {
 
         while let Some(received) = resp_stream.next().await {
             let received = received.unwrap();
-            println!("\treceived message: `{}`", received.message);
+            println!("\treceived message: `{}`", received.message.blue());
         }
     }
 }

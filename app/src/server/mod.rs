@@ -4,7 +4,7 @@ use std::{io::ErrorKind, pin::Pin, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 use tonic::{Request, Response, Status, Streaming};
-use tracing::{debug, error, info};
+use tracing::{error, info};
 
 fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
     let mut err: &(dyn std::error::Error + 'static) = err_status;
@@ -30,7 +30,7 @@ fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
 }
 
 #[derive(Debug, Default)]
-pub struct EchoServer {}
+pub struct EchoServer;
 
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<EchoResponse, Status>> + Send>>;
 type EchoResult<T> = Result<Response<T>, Status>;
@@ -41,10 +41,13 @@ impl protobuffer::echo_server::Echo for EchoServer {
     type BidirectionalStreamingEchoStream = ResponseStream;
 
     #[tracing::instrument]
-    async fn unary_echo(&self, _: Request<EchoRequest>) -> EchoResult<EchoResponse> {
-        info!("received request");
-        debug!("sending response");
-        Err(Status::unimplemented("not implemented"))
+    async fn unary_echo(&self, req: Request<EchoRequest>) -> EchoResult<EchoResponse> {
+        info!(
+            "{}",
+            "EchoServer::unary_echo; client connected from: {:?req.remote_addr().unwrap()}".blue()
+        );
+        let message = req.into_inner().message;
+        Ok(Response::new(EchoResponse { message }))
     }
 
     #[tracing::instrument]
@@ -61,11 +64,9 @@ impl protobuffer::echo_server::Echo for EchoServer {
         &self,
         req: Request<EchoRequest>,
     ) -> EchoResult<Self::ServerStreamingEchoStream> {
-        info!("EchoServer::server_streaming_echo");
         info!(
-            message = "\tclient connected from:",
-            "{:?}",
-            req.remote_addr()
+            "{}",
+            "EchoServer::server_streaming_echo; client connected from: {:?req.remote_addr().unwrap()}".blue()
         );
 
         // TODO: It should change to other implementation of streamed response
@@ -112,11 +113,9 @@ impl protobuffer::echo_server::Echo for EchoServer {
         &self,
         req: Request<Streaming<EchoRequest>>,
     ) -> EchoResult<Self::BidirectionalStreamingEchoStream> {
-        info!("EchoServer::bidirectional_streaming_echo");
         info!(
-            message = "\tclient connected from:",
-            "{:?}",
-            req.remote_addr()
+            "{}",
+            "EchoServer::bidirectional_streaming_echo; client connected from: {:?req.remote_addr().unwrap()}".blue()
         );
 
         let mut in_stream = req.into_inner();
@@ -138,7 +137,7 @@ impl protobuffer::echo_server::Echo for EchoServer {
                             if io_err.kind() == ErrorKind::BrokenPipe {
                                 // here you can handle special case when client
                                 // disconnected in unexpected way
-                                error!("\tclient disconnected: broken pipe");
+                                error!("{}", "client disconnected: broken pipe".red());
                                 break;
                             }
                         }
@@ -150,7 +149,7 @@ impl protobuffer::echo_server::Echo for EchoServer {
                     }
                 }
             }
-            info!("\tstream ended");
+            info!("{}", "stream ended".green());
         });
         // echo just write the same data that was received
         let out_stream = ReceiverStream::new(rx);

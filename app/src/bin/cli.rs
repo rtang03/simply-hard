@@ -4,10 +4,11 @@
 //
 // cargo build --release --bin simply-cli
 // cargo run --bin simply-cli
-//
+// ./simply-cli stream-echo 5
 
 use app::{clients::Client, DEFAULT_PORT};
 use clap::{Parser, Subcommand};
+use colored::*;
 use tracing::info;
 
 #[derive(Parser, Debug)]
@@ -27,11 +28,20 @@ struct Cli {
     port: u16,
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Ping server
+    /// server side stream, e.g. stream-echo 5
     #[command(arg_required_else_help = true)]
     StreamEcho { num: usize },
+
+    /// bidirection stream, e.g. bidi-stream-echo 5
+    #[command(arg_required_else_help = true)]
+    BidiStreamEcho { num: usize },
+
+    /// unary echo, e.g. unary-echo
+    #[command(arg_required_else_help = false)]
+    UnaryEcho,
 }
 
 /// Entry point for CLI tool.
@@ -58,13 +68,20 @@ async fn main() -> app::Result<()> {
 
     let mut client = match Client::connect(addr).await {
         Ok(client) => client,
-        Err(_) => panic!("failed to establish connection"),
+        Err(_) => panic!("{}", "failed to establish connection".red()),
     };
 
     match cli.command {
         Command::StreamEcho { num } => {
             println!("Repeat {} time(s)", num);
             client.streaming_echo(num).await;
+        }
+        Command::BidiStreamEcho { num } => {
+            println!("Repeat {} time(s)", num);
+            client.bidirectional_streaming_echo(num).await;
+        }
+        Command::UnaryEcho => {
+            client.unary_echo().await;
         }
     }
 

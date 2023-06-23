@@ -39,7 +39,7 @@ async fn main() -> app::Result<()> {
     let graceful_shutdown = async {
         if let Ok(result) = tokio::signal::ctrl_c().await {
             // TODO: add logic
-            info!(message = "Shutting down");
+            info!("{}", "gracefully shutting down".green());
             result
         }
     };
