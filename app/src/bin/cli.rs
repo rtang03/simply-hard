@@ -87,18 +87,15 @@ async fn main() -> app::Result<()> {
 
     match cli.command {
         Command::StreamEcho { num } => {
-            println!("Repeat {} time(s)", num);
             client.streaming_echo(num).await;
         }
         Command::BidiStreamEcho { num } => {
-            println!("Repeat {} time(s)", num);
             client.bidirectional_streaming_echo(num).await;
         }
         Command::UnaryEcho => {
             client.unary_echo().await;
         }
         Command::ClientStreamEcho { num } => {
-            println!("Repeat {} time(s)", num);
             client.client_streaming_echo(num).await;
         }
     }

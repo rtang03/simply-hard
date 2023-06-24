@@ -1,15 +1,17 @@
 extern crate config;
 
+use colored::*;
 use config::{Config, Environment, File};
 use notify::{event::ModifyKind, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use std::{collections::HashMap, path::Path, time::Duration};
+use std::{collections::HashMap, io::prelude::*, path::Path, time::Duration};
 use tokio::sync::{mpsc, RwLock};
+use tracing::info;
 
 lazy_static::lazy_static! {
     pub static ref GLOBAL_SETTINGS: Settings<RwLock<Config>> = Settings::new();
 }
 
-// DEVELOPER NOTE
+// NOTE
 // https://rust-unofficial.github.io/patterns/idioms/default.html
 // https://github.com/mehcode/config-rs/blob/master/examples/env-list/main.rs
 // https://tokio.rs/tokio/tutorial/channels
@@ -41,6 +43,28 @@ pub static ENV_FILENAME: &str = "env.toml";
 
 impl Settings {
     fn load_config() -> Config {
+        let path = Path::new(ENV_FILENAME);
+        let display = path.display();
+
+        // create "env.toml" if it doesn't exist
+        if !path.exists() {
+            let mut new_file = match std::fs::File::create(path) {
+                Ok(new_file) => new_file,
+                Err(e) => panic!("Could not create file {}: {}", display, e),
+            };
+
+            // TODO: change loading sample_env from static file, as a future enhancement
+            let sample_env = "debug = true";
+
+            match new_file.write_all(sample_env.as_bytes()) {
+                Ok(_) => {
+                    info!(message = format!("{}", "env.toml created successfully.".blue()));
+                }
+                Err(e) => panic!("Could not write to file {}: {}", display, e),
+            }
+        }
+
+        // load configuration into Config object
         let env_config = Config::builder()
             .add_source(File::with_name(ENV_FILENAME))
             .add_source(
@@ -67,7 +91,7 @@ impl Settings {
 
     pub async fn print_config(prefix: &str) {
         println!(
-            " * {} configuration :: \n\x1b[31m{:?}\x1b[0m",
+            " * {} configuration * \n\t\x1b[31m{:?}\x1b[0m",
             prefix,
             GLOBAL_SETTINGS
                 .0
@@ -110,7 +134,8 @@ impl Settings {
                     kind: notify::event::EventKind::Modify(_),
                     ..
                 }) => {
-                    println!(" * env.toml written; refreshing configuration ...");
+                    info!("{}", "env.toml written; refreshing configuration".blue());
+                    
                     // Settings::print_config("Before").await;
                     let mut write_lock = GLOBAL_SETTINGS.0.write().await;
                     *write_lock = Self::load_config();

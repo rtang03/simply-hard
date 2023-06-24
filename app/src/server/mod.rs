@@ -1,5 +1,7 @@
 use crate::protobuffer::{self, EchoRequest, EchoResponse};
+use crate::Settings;
 use colored::*;
+use std::marker::PhantomData;
 use std::{io::ErrorKind, pin::Pin, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
@@ -29,8 +31,19 @@ fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct EchoServer;
+/// Simply Echo Server
+#[derive(Debug)]
+pub struct EchoServer {
+    pub settings: Settings,
+}
+
+impl Default for EchoServer {
+    fn default() -> Self {
+        Self {
+            settings: Settings::new(),
+        }
+    }
+}
 
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<EchoResponse, Status>> + Send>>;
 type EchoResult<T> = Result<Response<T>, Status>;

@@ -6,13 +6,12 @@
 // cargo build --release --bin simply-server
 // cargo run --bin simply-server
 // ./simply-server --port 50051
-use app::{protobuffer, server::EchoServer, DEFAULT_PORT};
+use app::{protobuffer, server::EchoServer, Settings, DEFAULT_PORT, GLOBAL_SETTINGS};
 use clap::Parser;
 use colored::*;
 use tonic::transport::Server;
 use tracing::{info, info_span, Level};
 use tracing_subscriber::FmtSubscriber;
-
 #[derive(Parser, Debug)]
 #[clap(name = "simply-server", version, author, about = "Simply server")]
 struct Cli {
@@ -33,9 +32,9 @@ async fn main() -> app::Result<()> {
 
     // use that subscriber to process traces emitted after this point
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-    let cli = Cli::parse();
-    let server = EchoServer::default();
 
+    let cli = Cli::parse();
+    let simply_server = EchoServer::default();
     let graceful_shutdown = async {
         if let Ok(result) = tokio::signal::ctrl_c().await {
             // TODO: add logic
@@ -43,15 +42,23 @@ async fn main() -> app::Result<()> {
             result
         }
     };
-
     let addr = format!("[::1]:{}", cli.port).parse().unwrap();
 
     info!("{}", format!("Server listening on {:?}", addr).blue());
 
     let server = Server::builder()
         .trace_fn(|_| info_span!("echo_server"))
-        .add_service(protobuffer::echo_server::EchoServer::new(server))
+        .add_service(protobuffer::echo_server::EchoServer::new(simply_server))
         .serve_with_shutdown(addr, graceful_shutdown);
+
+    Settings::print_config("Initial").await;
+
+    tokio::spawn(async {
+        if let Err(err) = GLOBAL_SETTINGS.watch().await {
+            println!("watch error: {:?}", err);
+            println!("Quitting...");
+        }
+    });
 
     server.await?;
 

@@ -1,4 +1,4 @@
-pub mod settings;
+mod settings;
 pub mod cmd;
 pub mod clients;
 pub mod server;
@@ -6,7 +6,7 @@ pub mod echo;
 pub mod errors;
 
 pub use errors::*;
-pub use settings::Settings;
+pub use settings::{Settings, GLOBAL_SETTINGS};
 
 /// Default port that a server listens on.
 ///
