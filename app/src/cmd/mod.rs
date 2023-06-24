@@ -1,6 +1,5 @@
 mod ping;
 mod get;
-mod reset;
 
 pub use ping::Ping;
 

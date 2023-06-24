@@ -1,7 +1,6 @@
 use crate::protobuffer::{self, EchoRequest, EchoResponse};
 use crate::Settings;
 use colored::*;
-use std::marker::PhantomData;
 use std::{io::ErrorKind, pin::Pin, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};

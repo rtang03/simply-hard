@@ -1,19 +1,21 @@
 # Done
 
 -   Global Settings
--   Grpc server and cli
+-   Grpc echo server and cli
 -   tracing
+-   Apply configuration changes
+-   Graceful shutdown
+-   Sample tonic test
 
 # Todo
 
--   Apply configuration changes
--   Graceful shutdown
--   Async test
 -   Secure grpc
 -   Badges
 -   Benchmark and criterion
 -   thisError
 -   Encript / decript server contents
--   Add: chrono, url, syn, bytes, tempfile, packing_lot, rayon, hyper, tokio-util
--   termcolor, mime, ring, tower, indicatif, slab, console
+-   Add: chrono, url, syn, tempfile, packing_lot, rayon
+-   mime, ring, tower, indicatif, slab, console
 -   Key derivation function
+-   docker + wasm
+-   Mock EchoServer

@@ -30,7 +30,7 @@ lazy_static::lazy_static! {
 /// # Example
 ///
 /// ```
-/// use settings::Settings;
+/// use app::Settings;
 /// use std::collections::HashMap;
 ///
 /// let s = Settings::new();

@@ -1,6 +1,7 @@
 // DEVELOPMENT NOTE:
 // https://docs.rs/clap/latest/clap/_derive/_cookbook/git_derive/index.html
 // https://docs.rs/clap/latest/clap/_tutorial/index.html
+// https://github.com/hyperium/tonic/blob/master/examples/src/mock/mock.rs
 //
 // cargo build --release --bin simply-cli
 // cargo run --bin simply-cli
@@ -101,4 +102,71 @@ async fn main() -> app::Result<()> {
     }
 
     Ok(())
+}
+
+// NOTE:
+// may replace #[test] by #[tokio::test(flavor = "current_thread")]
+// It will give a short code, by removing tokio::runtime::Builder::new_multi_thread()
+// Shorter syntax is tradeoff by... the dim button "Run Test" in VS Code will disappear
+// This (longer) code remains here, for self-learning purposes
+
+/// test cli to issue unary_echo command
+#[test]
+fn test_cli_unary_echo() {
+    use app::protobuffer::{self, echo_client::EchoClient};
+    use app::server::EchoServer;
+    use tonic::{
+        transport::{Endpoint, Server, Uri},
+        Request, Response,
+    };
+    use tower::service_fn;
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async {
+            let (client, server) = tokio::io::duplex(1024);
+            let simply_server = EchoServer::default();
+
+            tokio::spawn(async move {
+                Server::builder()
+                    .add_service(protobuffer::echo_server::EchoServer::new(simply_server))
+                    .serve_with_incoming(tokio_stream::iter(vec![Ok::<_, std::io::Error>(server)]))
+                    .await
+            });
+
+            // Move client to an option so we can _move_ the inner value
+            // on the first attempt to connect. All other attempts will fail.
+            let mut client = Some(client);
+            let channel = Endpoint::try_from("http://[::]:50051")
+                .unwrap()
+                .connect_with_connector(service_fn(move |_: Uri| {
+                    let client = client.take();
+
+                    async move {
+                        if let Some(client) = client {
+                            Ok(client)
+                        } else {
+                            Err(std::io::Error::new(
+                                std::io::ErrorKind::Other,
+                                "Client already taken",
+                            ))
+                        }
+                    }
+                }))
+                .await
+                .unwrap();
+
+            let mut client = EchoClient::new(channel);
+
+            let request = Request::new(protobuffer::EchoRequest {
+                message: "foo".to_owned(),
+            });
+
+            let response: Response<protobuffer::EchoResponse> =
+                client.unary_echo(request).await.unwrap();
+
+            assert_eq!(response.get_ref().message, "foo");
+        })
 }
