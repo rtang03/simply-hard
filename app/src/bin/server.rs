@@ -9,9 +9,7 @@
 use app::{protobuffer, server::EchoServer, Settings, DEFAULT_PORT, GLOBAL_SETTINGS};
 use clap::Parser;
 use colored::*;
-use tonic::transport::Server;
-use tracing::{info, info_span, Level};
-use tracing_subscriber::FmtSubscriber;
+
 #[derive(Parser, Debug)]
 #[clap(name = "simply-server", version, author, about = "Simply server")]
 struct Cli {
@@ -19,8 +17,13 @@ struct Cli {
     port: u16,
 }
 
+#[cfg(feature = "server")]
 #[tokio::main]
 async fn main() -> app::Result<()> {
+    use tonic::transport::Server;
+    use tracing::{info, info_span, Level};
+    use tracing_subscriber::FmtSubscriber;
+
     // construct a subscriber that prints formatted traces to stdout
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::DEBUG)

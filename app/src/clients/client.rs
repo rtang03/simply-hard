@@ -5,7 +5,7 @@ use tokio_stream::{Stream, StreamExt};
 use tonic::{codegen::StdError, transport::Channel, Request};
 use tracing::{info, instrument};
 
-#[derive(Debug)]
+#[cfg_attr(feature = "cli", derive(Debug))]
 pub struct Client {
     echo_client: EchoClient<Channel>,
 }

@@ -1,3 +1,6 @@
+//!
+//! Command
+//! 
 mod ping;
 mod get;
 

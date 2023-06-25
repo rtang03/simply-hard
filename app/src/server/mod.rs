@@ -1,3 +1,7 @@
+//!
+//! Server
+//!
+
 use crate::protobuffer::{self, EchoRequest, EchoResponse};
 use crate::Settings;
 use colored::*;
@@ -31,7 +35,7 @@ fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
 }
 
 /// Simply Echo Server
-#[derive(Debug)]
+#[cfg_attr(feature = "server", derive(Debug))]
 pub struct EchoServer {
     pub settings: Settings,
 }

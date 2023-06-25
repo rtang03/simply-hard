@@ -1,4 +1,6 @@
-extern crate config;
+//!
+//! Settings
+//!
 
 use colored::*;
 use config::{Config, Environment, File};
@@ -36,7 +38,7 @@ lazy_static::lazy_static! {
 /// let s = Settings::new();
 ///    assert!(s.0.blocking_read().clone().try_deserialize::<HashMap<String, String>>().is_ok());
 /// ```
-#[derive(Debug, Default)]
+#[cfg_attr(feature = "server", derive(Debug, Default))]
 pub struct Settings<T = RwLock<Config>>(pub T);
 
 pub static ENV_FILENAME: &str = "env.toml";
@@ -135,7 +137,7 @@ impl Settings {
                     ..
                 }) => {
                     info!("{}", "env.toml written; refreshing configuration".blue());
-                    
+
                     // Settings::print_config("Before").await;
                     let mut write_lock = GLOBAL_SETTINGS.0.write().await;
                     *write_lock = Self::load_config();

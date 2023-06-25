@@ -1,4 +1,4 @@
-// DEVELOPMENT NOTE:
+// NOTE:
 // https://docs.rs/clap/latest/clap/_derive/_cookbook/git_derive/index.html
 // https://docs.rs/clap/latest/clap/_tutorial/index.html
 // https://github.com/hyperium/tonic/blob/master/examples/src/mock/mock.rs
@@ -9,9 +9,6 @@
 
 use app::{clients::Client, DEFAULT_PORT};
 use clap::{Parser, Subcommand};
-use colored::*;
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -59,8 +56,13 @@ enum Command {
 /// `flavor = "current_thread"` is used here to avoid spawning background
 /// threads. The CLI tool use case benefits more by being lighter instead of
 /// multi-threaded.
+#[cfg(feature = "cli")]
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> app::Result<()> {
+    use colored::*;
+    use tracing::{info, Level};
+    use tracing_subscriber::FmtSubscriber;
+
     // Enable logging
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
@@ -109,6 +111,9 @@ async fn main() -> app::Result<()> {
 // It will give a short code, by removing tokio::runtime::Builder::new_multi_thread()
 // Shorter syntax is tradeoff by... the dim button "Run Test" in VS Code will disappear
 // This (longer) code remains here, for self-learning purposes
+//
+// Alternatively, can use this one, if single thread is desired
+// #[tokio::test(flavor = "current_thread")]
 
 /// test cli to issue unary_echo command
 #[test]
