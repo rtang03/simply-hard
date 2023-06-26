@@ -6,7 +6,13 @@
 // cargo build --release --bin simply-server
 // cargo run --bin simply-server
 // ./simply-server --port 50051
-use app::{protobuffer, server::EchoServer, Settings, DEFAULT_PORT, GLOBAL_SETTINGS};
+
+extern crate derive_builder;
+
+use app::{
+    protobuffer, server::EchoServerBuilder, Connection, PersonRepository, Settings, DEFAULT_PORT,
+    GLOBAL_SETTINGS,
+};
 use clap::Parser;
 use colored::*;
 
@@ -37,7 +43,15 @@ async fn main() -> app::Result<()> {
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let cli = Cli::parse();
-    let simply_server = EchoServer::default();
+
+    let person_repository = PersonRepository::default();
+
+    let simply_server = EchoServerBuilder::default()
+        .person(person_repository)
+        .connection(Connection::new().await)
+        .build()
+        .unwrap();
+
     let graceful_shutdown = async {
         if let Ok(result) = tokio::signal::ctrl_c().await {
             // TODO: add logic
@@ -53,7 +67,8 @@ async fn main() -> app::Result<()> {
         .trace_fn(|_| info_span!("echo_server"))
         .add_service(protobuffer::echo_server::EchoServer::new(simply_server))
         .serve_with_shutdown(addr, graceful_shutdown);
-
+    
+    Settings::new();
     Settings::print_config("Initial").await;
 
     tokio::spawn(async {

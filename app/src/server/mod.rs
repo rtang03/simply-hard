@@ -2,9 +2,11 @@
 //! Server
 //!
 
+use crate::models::PersonRepository;
 use crate::protobuffer::{self, EchoRequest, EchoResponse};
-use crate::Settings;
+use crate::Connection;
 use colored::*;
+use derive_builder::*;
 use std::{io::ErrorKind, pin::Pin, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
@@ -35,16 +37,20 @@ fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
 }
 
 /// Simply Echo Server
-#[cfg_attr(feature = "server", derive(Debug))]
+#[cfg_attr(feature = "server", derive(Debug, Builder))]
+#[builder(pattern = "owned")]
 pub struct EchoServer {
-    pub settings: Settings,
+    person: PersonRepository,
+    connection: Connection,
 }
 
-impl Default for EchoServer {
-    fn default() -> Self {
-        Self {
-            settings: Settings::new(),
-        }
+impl EchoServer {
+    pub async fn perform(&self) {
+        self.person.perform(&self.connection).await.unwrap();
+    }
+
+    pub async fn perform2(&self) {
+        self.person.perform(&self.connection).await.unwrap();
     }
 }
 

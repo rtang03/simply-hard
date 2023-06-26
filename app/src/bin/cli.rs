@@ -118,8 +118,10 @@ async fn main() -> app::Result<()> {
 /// test cli to issue unary_echo command
 #[test]
 fn test_cli_unary_echo() {
-    use app::protobuffer::{self, echo_client::EchoClient};
-    use app::server::EchoServer;
+    use app::{
+        protobuffer::{self, echo_client::EchoClient},
+        server::EchoServerBuilder,
+    };
     use tonic::{
         transport::{Endpoint, Server, Uri},
         Request, Response,
@@ -132,7 +134,10 @@ fn test_cli_unary_echo() {
         .unwrap()
         .block_on(async {
             let (client, server) = tokio::io::duplex(1024);
-            let simply_server = EchoServer::default();
+            let simply_server = EchoServerBuilder::default()
+                // .connection(Connection::new().await)
+                .build()
+                .unwrap();
 
             tokio::spawn(async move {
                 Server::builder()

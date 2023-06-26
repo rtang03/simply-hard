@@ -4,7 +4,8 @@
 // #![warn(missing_docs)]
 
 mod settings;
-pub mod cmd;
+mod models;
+pub use models::*;
 pub mod clients;
 pub mod server;
 pub mod echo;
