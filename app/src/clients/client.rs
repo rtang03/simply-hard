@@ -33,10 +33,8 @@ impl Client {
     // #[instrument(skip(self))] will disable it
     // self=Client { echo_client: EchoClient { inner: Grpc { inner: Channel, origin: /, compression_encoding: None, accept_compression_encodings: EnabledCompressionEncodings, max_decoding_message_size: None, max_encoding_message_size: None } } }
     #[instrument(skip(self))]
-    pub async fn unary_echo(&mut self) {
-        let request = Request::new(EchoRequest {
-            message: "foo".into(),
-        });
+    pub async fn unary_echo(&mut self, message: String) {
+        let request = Request::new(EchoRequest { message });
 
         info!(
             message = format!("{}", "Sending request".blue()),

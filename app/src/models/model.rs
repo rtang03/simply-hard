@@ -2,25 +2,25 @@ use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
 
 #[derive(Debug, Serialize)]
-struct Name<'a> {
-    first: &'a str,
-    last: &'a str,
+pub struct Name<'a> {
+    pub first: &'a str,
+    pub last: &'a str,
 }
 
 #[derive(Debug, Serialize)]
-struct Person<'a> {
+pub struct Person<'a> {
     title: &'a str,
     name: Name<'a>,
     marketing: bool,
 }
 
 #[derive(Debug, Serialize)]
-struct Responsibility {
+pub struct Responsibility {
     marketing: bool,
 }
 
 #[derive(Debug, Deserialize)]
-struct Record {
+pub struct Record {
     #[allow(dead_code)]
     id: Thing,
 }

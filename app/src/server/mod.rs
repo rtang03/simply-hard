@@ -4,7 +4,7 @@
 
 use crate::models::PersonRepository;
 use crate::protobuffer::{self, EchoRequest, EchoResponse};
-use crate::Connection;
+use crate::{Connection, Respository};
 use colored::*;
 use derive_builder::*;
 use std::{io::ErrorKind, pin::Pin, time::Duration};
@@ -45,12 +45,14 @@ pub struct EchoServer {
 }
 
 impl EchoServer {
-    pub async fn perform(&self) {
-        self.person.perform(&self.connection).await.unwrap();
+    /// dummy call
+    async fn say_hello(&self) {
+        self.person.say_hello(&self.connection).await.unwrap();
     }
 
-    pub async fn perform2(&self) {
-        self.person.perform(&self.connection).await.unwrap();
+    /// set a named variable
+    async fn set_name(&self) {
+        self.person.set_name(&self.connection).await.unwrap();
     }
 }
 
@@ -62,13 +64,26 @@ impl protobuffer::echo_server::Echo for EchoServer {
     type ServerStreamingEchoStream = ResponseStream;
     type BidirectionalStreamingEchoStream = ResponseStream;
 
+    // NOTE
+    // if using #[instrument] , the log will appear a long version, which includes EchoServer object
+
     #[instrument]
     async fn unary_echo(&self, req: Request<EchoRequest>) -> EchoResult<EchoResponse> {
-        info!(
-            "{}",
-            "EchoServer::unary_echo; client connected from: {:?req.remote_addr().unwrap()}".blue()
-        );
+        info!(message = "unary_echo".blue().to_string());
+        info!(message = format!("{:?}", req.remote_addr().unwrap()));
+
         let message = req.into_inner().message;
+
+        self.set_name().await;
+
+        // if message.starts_with("say_hello") {
+        //     self.say_hello().await;
+        // }
+
+        // if message.starts_with("set_name") {
+        //     self.set_name().await;
+        // }
+
         Ok(Response::new(EchoResponse { message }))
     }
 
@@ -79,10 +94,9 @@ impl protobuffer::echo_server::Echo for EchoServer {
         &self,
         req: Request<Streaming<EchoRequest>>,
     ) -> EchoResult<EchoResponse> {
-        info!(
-            "{}",
-            "EchoServer::client_streaming_echo; client connected from: {:?req.remote_addr().unwrap()}".blue()
-        );
+        info!(messsage = "client_streaming_echo".blue().to_string());
+        info!(message = format!("{:?}", req.remote_addr().unwrap()));
+
         let mut in_stream = req.into_inner();
         let (tx, mut rx) = mpsc::channel(128);
 
@@ -132,10 +146,8 @@ impl protobuffer::echo_server::Echo for EchoServer {
         &self,
         req: Request<EchoRequest>,
     ) -> EchoResult<Self::ServerStreamingEchoStream> {
-        info!(
-            "{}",
-            "EchoServer::server_streaming_echo; client connected from: {:?req.remote_addr().unwrap()}".blue()
-        );
+        info!(messsage = "server_streaming_echo".blue().to_string());
+        info!(message = format!("{:?}", req.remote_addr().unwrap()));
 
         // TODO: It should change to other implementation of streamed response
         // creating infinite stream with requested message
@@ -181,10 +193,9 @@ impl protobuffer::echo_server::Echo for EchoServer {
         &self,
         req: Request<Streaming<EchoRequest>>,
     ) -> EchoResult<Self::BidirectionalStreamingEchoStream> {
-        info!(
-            "{}",
-            "EchoServer::bidirectional_streaming_echo; client connected from: {:?req.remote_addr().unwrap()}".blue()
-        );
+        info!(message = "bidirectional_streaming_echo".blue().to_string());
+        info!(message = format!("{:?}", req.remote_addr().unwrap()));
+
 
         let mut in_stream = req.into_inner();
         let (tx, rx) = mpsc::channel(128);

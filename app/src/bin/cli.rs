@@ -43,8 +43,8 @@ enum Command {
     ClientStreamEcho { num: usize },
 
     /// unary echo, e.g. unary-echo
-    #[command(arg_required_else_help = false)]
-    UnaryEcho,
+    #[command(arg_required_else_help = true)]
+    UnaryEcho { message: String },
 }
 
 /// Entry point for CLI tool.
@@ -95,8 +95,8 @@ async fn main() -> app::Result<()> {
         Command::BidiStreamEcho { num } => {
             client.bidirectional_streaming_echo(num).await;
         }
-        Command::UnaryEcho => {
-            client.unary_echo().await;
+        Command::UnaryEcho { message } => {
+            client.unary_echo(message).await;
         }
         Command::ClientStreamEcho { num } => {
             client.client_streaming_echo(num).await;
