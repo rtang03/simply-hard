@@ -7,7 +7,7 @@ use config::{Config, Environment, File};
 use notify::{event::ModifyKind, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{collections::HashMap, io::prelude::*, path::Path, time::Duration};
 use tokio::sync::{mpsc, RwLock};
-use tracing::info;
+use tracing::{error, info};
 
 lazy_static::lazy_static! {
     pub static ref GLOBAL_SETTINGS: Settings<RwLock<Config>> = Settings::new();
@@ -19,6 +19,7 @@ lazy_static::lazy_static! {
 // https://tokio.rs/tokio/tutorial/channels
 // https://github.com/notify-rs/notify/blob/5f8cbebea354175ec6afbdd8863720742e531b3a/examples/async_monitor.rs
 // https://github.com/mehcode/config-rs/blob/master/examples/watch/main.rs
+// https://stackoverflow.com/questions/29428227/return-local-string-as-a-slice-str
 
 /// Global configuration, based on both config file "env.toml" and environment variables.
 /// System environment variables, prefixed with "APP_", will be parsed. It will watch for
@@ -44,6 +45,8 @@ pub struct Settings<T = RwLock<Config>>(pub T);
 pub static ENV_FILENAME: &str = "env.toml";
 
 impl Settings {
+    /// Load configuration from env.toml file and environment variables
+    /// environment variables shall be prefixed with APP_
     fn load_config() -> Config {
         let path = Path::new(ENV_FILENAME);
         let display = path.display();
@@ -59,9 +62,7 @@ impl Settings {
             let sample_env = "debug = true";
 
             match new_file.write_all(sample_env.as_bytes()) {
-                Ok(_) => {
-                    info!(message = format!("{}", "env.toml created successfully.".blue()));
-                }
+                Ok(_) => info!(message = format!("{}", "env.toml created successfully.".blue())),
                 Err(e) => panic!("Could not write to file {}: {}", display, e),
             }
         }
@@ -78,8 +79,8 @@ impl Settings {
 
         match env_config {
             Ok(config) => config,
-            Err(e) => {
-                println!("cannot load file, {}", e);
+            Err(err) => {
+                error!(error = format!("cannot load file, {:?}", err));
                 Config::default()
             }
         }
@@ -91,6 +92,7 @@ impl Settings {
         Self(RwLock::new(config))
     }
 
+    /// Print config information
     pub async fn print_config(prefix: &str) {
         println!(
             " * {} configuration * \n\t\x1b[31m{:?}\x1b[0m",
@@ -105,6 +107,31 @@ impl Settings {
         );
     }
 
+    /// Get configuration item
+    pub async fn get_config_item(key: &str) -> Option<String> {
+        match GLOBAL_SETTINGS
+            .0
+            .read()
+            .await
+            .clone()
+            .try_deserialize::<HashMap<String, String>>()
+        {
+            Ok(config) => {
+                if let Some(val) = config.get(key) {
+                    let mut string = String::new();
+                    string.push_str(val);
+                    Some(string)
+                } else {
+                    None
+                }
+            }
+            Err(err) => {
+                error!(error = format!("fail to get config item, {:?}", err));
+                None
+            }
+        }
+    }
+
     pub async fn watch(&self) -> notify::Result<()> {
         let (tx, mut rx) = mpsc::channel(1);
 
@@ -113,10 +140,8 @@ impl Settings {
                 Ok(Event {
                     kind: notify::event::EventKind::Modify(ModifyKind::Data(_)),
                     ..
-                }) => {
-                    tx.blocking_send(res).unwrap();
-                }
-                Err(err) => println!("notify error: {:?}", err),
+                }) => tx.blocking_send(res).unwrap(),
+                Err(err) => error!(error = format!("notify error, {:?}", err)),
                 _ => {
                     // every content change emits two events, DataChange and MetaChange
                     // this arm ignores below metadata change events
@@ -144,7 +169,7 @@ impl Settings {
                     drop(write_lock);
                     Settings::print_config("New").await;
                 }
-                Err(err) => println!("recv error: {:?}", err),
+                Err(err) => error!(error = format!("recv error, {:?}", err)),
                 _ => {
                     // ignore event
                 }

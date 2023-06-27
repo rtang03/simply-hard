@@ -42,6 +42,9 @@ async fn main() -> app::Result<()> {
     // use that subscriber to process traces emitted after this point
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
+    Settings::new();
+    Settings::print_config("Initial").await;
+
     let cli = Cli::parse();
 
     let person_repository = PersonRepository::default();
@@ -67,9 +70,6 @@ async fn main() -> app::Result<()> {
         .trace_fn(|_| info_span!("echo_server"))
         .add_service(protobuffer::echo_server::EchoServer::new(simply_server))
         .serve_with_shutdown(addr, graceful_shutdown);
-    
-    Settings::new();
-    Settings::print_config("Initial").await;
 
     tokio::spawn(async {
         if let Err(err) = GLOBAL_SETTINGS.watch().await {
