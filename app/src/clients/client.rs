@@ -1,4 +1,7 @@
-use crate::protobuffer::{echo_client::EchoClient, EchoRequest};
+use crate::{
+    protobuffer::{echo_client::EchoClient, EchoRequest},
+    AppError,
+};
 use colored::*;
 use std::time::Duration;
 use tokio_stream::{Stream, StreamExt};
@@ -16,9 +19,10 @@ impl Client {
         D: TryInto<tonic::transport::Endpoint>,
         D::Error: Into<StdError>,
     {
-        let echo_client = EchoClient::connect(addr).await?;
-
-        Ok(Client { echo_client })
+        match EchoClient::connect(addr).await {
+            Ok(echo_client) => Ok(Client { echo_client }),
+            Err(err) => Err(AppError::ConnectError(err)),
+        }
     }
 
     // infinite iterator of EchoRequests

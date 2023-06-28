@@ -6,7 +6,6 @@
 // cargo build --release --bin simply-server
 // cargo run --bin simply-server
 // ./simply-server --port 50051
-
 extern crate derive_builder;
 
 use app::{
@@ -25,7 +24,7 @@ struct Cli {
 
 #[cfg(feature = "server")]
 #[tokio::main]
-async fn main() -> app::Result<()> {
+async fn main() -> Result<(), tonic::transport::Error> {
     use tonic::transport::Server;
     use tracing::{info, info_span, Level};
     use tracing_subscriber::FmtSubscriber;

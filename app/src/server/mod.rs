@@ -1,10 +1,10 @@
 //!
 //! Server
 //!
-
 use crate::models::PersonRepository;
 use crate::protobuffer::{self, EchoRequest, EchoResponse};
-use crate::{Connection, Respository};
+use crate::Ping;
+use crate::{Connection, KeyValueStore};
 use colored::*;
 use derive_builder::*;
 use std::{io::ErrorKind, pin::Pin, time::Duration};
@@ -45,14 +45,12 @@ pub struct EchoServer {
 }
 
 impl EchoServer {
-    /// dummy call
-    async fn say_hello(&self) {
-        self.person.say_hello(&self.connection).await.unwrap();
-    }
-
     /// set a named variable
-    async fn set_name(&self) {
-        self.person.set_name(&self.connection).await.unwrap();
+    async fn set_message(&self, message: &str) {
+        self.person
+            .set_value(&self.connection, message)
+            .await
+            .unwrap();
     }
 }
 
@@ -64,27 +62,26 @@ impl protobuffer::echo_server::Echo for EchoServer {
     type ServerStreamingEchoStream = ResponseStream;
     type BidirectionalStreamingEchoStream = ResponseStream;
 
-    // NOTE
-    // if using #[instrument] , the log will appear a long version, which includes EchoServer object
-
-    #[instrument]
+    #[instrument(skip(self, req))]
     async fn unary_echo(&self, req: Request<EchoRequest>) -> EchoResult<EchoResponse> {
         info!(message = "unary_echo".blue().to_string());
         info!(message = format!("{:?}", req.remote_addr().unwrap()));
 
         let message = req.into_inner().message;
-
-        self.set_name().await;
-
-        // if message.starts_with("say_hello") {
-        //     self.say_hello().await;
+        let cmd = Ping::new(message.clone());
+        // if message.starts_with("set_message") {
+        //     for (i, item) in message.split_whitespace().enumerate() {
+        //         if i == 1 {
+        //             self.set_message(item).await;
+        //         }
+        //     }
         // }
-
-        // if message.starts_with("set_name") {
-        //     self.set_name().await;
-        // }
-
-        Ok(Response::new(EchoResponse { message }))
+        match cmd.apply(&self.connection).await {
+            Ok(message) => Ok(Response::new(EchoResponse { message })),
+            Err(_) => Ok(Response::new(EchoResponse {
+                message: "nil".to_string(),
+            })),
+        }
     }
 
     // NOTE:
@@ -195,7 +192,6 @@ impl protobuffer::echo_server::Echo for EchoServer {
     ) -> EchoResult<Self::BidirectionalStreamingEchoStream> {
         info!(message = "bidirectional_streaming_echo".blue().to_string());
         info!(message = format!("{:?}", req.remote_addr().unwrap()));
-
 
         let mut in_stream = req.into_inner();
         let (tx, rx) = mpsc::channel(128);

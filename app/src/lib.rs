@@ -5,6 +5,8 @@
 
 mod settings;
 mod models;
+mod cmd;
+pub use cmd::*;
 pub use models::*;
 pub mod clients;
 pub mod server;

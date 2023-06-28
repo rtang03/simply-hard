@@ -1,4 +1,4 @@
-use crate::{model::Name, Settings};
+use crate::{model::KeyValue, Settings};
 use async_trait::async_trait;
 use colored::*;
 use surrealdb::engine::remote::ws::Ws;
@@ -10,41 +10,49 @@ use tracing::{error, info};
 pub struct PersonRepository {}
 
 #[async_trait]
-pub trait Respository {
-    async fn set_name(&self, conn: &Connection) -> Result<(), surrealdb::Error>;
+pub trait KeyValueStore<'a> {
+    type Output;
+
+    async fn set_value(&self, conn: &Connection, content: &str) -> crate::Result<Self::Output>;
 }
 
 #[async_trait]
-impl Respository for PersonRepository {
-    async fn set_name(&self, conn: &Connection) -> Result<(), surrealdb::Error> {
-        if let Err(error) = conn
+impl<'a> KeyValueStore<'a> for PersonRepository {
+    type Output = KeyValue<'a>;
+
+    async fn set_value(&self, conn: &Connection, content: &str) -> crate::Result<Self::Output> {
+        for (i, _item) in content.split_whitespace().enumerate() {
+            if i == 1 {
+                // self.set_message(item).await;
+            }
+        }
+        match conn
             .db
             .set(
-                "name",
-                Name {
-                    first: "Tobie",
-                    last: "Morgan Hitchcock",
+                "kv",
+                KeyValue {
+                    key: "a",
+                    value: "b",
                 },
             )
             .await
         {
-            println!("{:?}", error);
+            Ok(_value) => {
+                todo!()
+            }
+            Err(_err) => {
+                todo!()
+            }
         }
-
-        // let response: surrealdb::Response = conn.db.query("CREATE person SET name = $name").await?;
-
-        Ok(())
     }
 }
 
 impl PersonRepository {
-    pub async fn say_hello(&self, conn: &Connection) -> Result<(), surrealdb::Error> {
-        conn.db.health().await?;
-
-        println!("Database is health");
-
-        Ok(())
-    }
+    // pub async fn say_hello(&self, conn: &Connection) -> Result<(), surrealdb::Error> {
+    //     conn.db.health().await?;
+    //     println!("Database is health");
+    //     Ok(())
+    // }
 }
 
 /// SurrealDb client connection
