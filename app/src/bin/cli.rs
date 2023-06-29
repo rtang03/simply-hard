@@ -45,6 +45,16 @@ enum Command {
     /// unary echo, e.g. unary-echo
     #[command(arg_required_else_help = true)]
     UnaryEcho { message: String },
+
+    /// Set key-value pair
+    #[command(arg_required_else_help = true)]
+    Set {
+        /// key
+        key: String,
+
+        /// value
+        value: String,
+    },
 }
 
 /// Entry point for CLI tool.
@@ -100,6 +110,9 @@ async fn main() -> app::Result<()> {
         }
         Command::ClientStreamEcho { num } => {
             client.client_streaming_echo(num).await;
+        }
+        Command::Set { key, value } => {
+            client.set_value(key, value).await;
         }
     }
 

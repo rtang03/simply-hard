@@ -1,4 +1,4 @@
-use crate::{model::KeyValue, Settings};
+use crate::{model::KeyValue, AppError, Settings};
 use async_trait::async_trait;
 use colored::*;
 use surrealdb::engine::remote::ws::Ws;
@@ -13,36 +13,27 @@ pub struct PersonRepository {}
 pub trait KeyValueStore<'a> {
     type Output;
 
-    async fn set_value(&self, conn: &Connection, content: &str) -> crate::Result<Self::Output>;
+    async fn set_value(
+        &self,
+        conn: &Connection,
+        key: &'a str,
+        value: &'a str,
+    ) -> crate::Result<Self::Output>;
 }
 
 #[async_trait]
 impl<'a> KeyValueStore<'a> for PersonRepository {
     type Output = KeyValue<'a>;
 
-    async fn set_value(&self, conn: &Connection, content: &str) -> crate::Result<Self::Output> {
-        for (i, _item) in content.split_whitespace().enumerate() {
-            if i == 1 {
-                // self.set_message(item).await;
-            }
-        }
-        match conn
-            .db
-            .set(
-                "kv",
-                KeyValue {
-                    key: "a",
-                    value: "b",
-                },
-            )
-            .await
-        {
-            Ok(_value) => {
-                todo!()
-            }
-            Err(_err) => {
-                todo!()
-            }
+    async fn set_value(
+        &self,
+        conn: &Connection,
+        key: &'a str,
+        value: &'a str,
+    ) -> crate::Result<Self::Output> {
+        match conn.db.set("kv", KeyValue { key, value }).await {
+            Ok(_) => Ok(KeyValue { key, value }),
+            Err(err) => Err(AppError::SurrealdbSetError(err)),
         }
     }
 }

@@ -10,6 +10,18 @@ message EchoRequest { string message = 1; }
 // EchoResponse is the response for echo.
 message EchoResponse { string message = 1; }
 
+// KeyValueRequest
+message KeyValueRequest {
+  string key = 1;
+  optional string value = 2;
+}
+
+// KeyValueResponse
+message KeyValueResponse {
+  string status = 1;
+  optional string error = 2;
+}
+
 // Echo is the echo service.
 service Echo {
   // UnaryEcho is unary echo.
@@ -21,4 +33,8 @@ service Echo {
   // BidirectionalStreamingEcho is bidi streaming.
   rpc BidirectionalStreamingEcho(stream EchoRequest)
       returns (stream EchoResponse) {}
+  // KeyValue store - set value, return RecordId or nil
+  rpc SetValue(KeyValueRequest) returns (KeyValueResponse) {}
+  // KeyValue store - get value
+  rpc GetValue(KeyValueRequest) returns (KeyValueResponse) {}
 }

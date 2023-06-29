@@ -1,6 +1,5 @@
-use tracing::instrument;
-
 use crate::{AppError, Connection};
+use tracing::instrument;
 
 /// Returns PONG if no argument is provided, otherwise
 /// return a copy of the argument as a bulk.
@@ -14,8 +13,10 @@ pub struct Ping {
 
 impl Ping {
     /// Create a new `Ping` command with optional `message`.
-    pub fn new(message: String) -> Ping {
-        Ping { message }
+    pub fn new(message: impl ToString) -> Ping {
+        Ping {
+            message: message.to_string(),
+        }
     }
 
     /// Apply the `Ping` command and return the message.

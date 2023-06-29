@@ -1,12 +1,12 @@
 use crate::{
-    protobuffer::{echo_client::EchoClient, EchoRequest},
+    protobuffer::{echo_client::EchoClient, EchoRequest, KeyValueRequest},
     AppError,
 };
 use colored::*;
 use std::time::Duration;
 use tokio_stream::{Stream, StreamExt};
 use tonic::{codegen::StdError, transport::Channel, Request};
-use tracing::{info, instrument};
+use tracing::{error, info, instrument};
 
 #[cfg_attr(feature = "cli", derive(Debug))]
 pub struct Client {
@@ -32,25 +32,51 @@ impl Client {
         })
     }
 
-    // NOTE:
-    // #[instrument] appends Client object in the tracing log output in stdout
-    // #[instrument(skip(self))] will disable it
-    // self=Client { echo_client: EchoClient { inner: Grpc { inner: Channel, origin: /, compression_encoding: None, accept_compression_encodings: EnabledCompressionEncodings, max_decoding_message_size: None, max_encoding_message_size: None } } }
+    #[instrument(skip(self, key, value))]
+    pub async fn set_value(&mut self, key: String, value: String) {
+        let request = Request::new(KeyValueRequest {
+            key,
+            value: Some(value),
+        });
+        info!(
+            message = format!("{}", "Sending set_value request".blue()),
+            key = %request.get_ref().key,
+        );
+
+        match self.echo_client.set_value(request).await {
+            Ok(response) => {
+                let message = match response.get_ref().error.clone() {
+                    Some(err) => format!("error encountered, {}", err),
+                    None => response.get_ref().status.clone(),
+                };
+                info!(
+                    message = format!("{}", "Got a response".blue()),
+                    response = %response.get_ref().status
+                );
+                println!("{message}");
+            }
+            Err(err) => error!(error = format!("{:?}", err)),
+        }
+    }
+
     #[instrument(skip(self))]
     pub async fn unary_echo(&mut self, message: String) {
         let request = Request::new(EchoRequest { message });
-
         info!(
             message = format!("{}", "Sending request".blue()),
             request = %request.get_ref().message
         );
 
-        let response = self.echo_client.unary_echo(request).await.unwrap();
-
-        info!(
-            message = format!("{}", "Got a response".blue()),
-            response = %response.get_ref().message
-        );
+        match self.echo_client.unary_echo(request).await {
+            Ok(response) => {
+                info!(
+                    message = format!("{}", "Got a response".blue()),
+                    response = %response.get_ref().message
+                );
+                println!("{}", response.get_ref().message)
+            }
+            Err(err) => error!(error = format!("{:?}", err)),
+        }
     }
 
     #[instrument(skip(self))]

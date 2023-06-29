@@ -14,6 +14,24 @@ pub struct EchoResponse {
     #[prost(string, tag = "1")]
     pub message: ::prost::alloc::string::String,
 }
+/// KeyValueRequest
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct KeyValueRequest {
+    #[prost(string, tag = "1")]
+    pub key: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub value: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// KeyValueResponse
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct KeyValueResponse {
+    #[prost(string, tag = "1")]
+    pub status: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub error: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// Generated client implementations.
 pub mod echo_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -195,6 +213,52 @@ pub mod echo_client {
                 .insert(GrpcMethod::new("echo.Echo", "BidirectionalStreamingEcho"));
             self.inner.streaming(req, path, codec).await
         }
+        /// KeyValue store - set value, return RecordId or nil
+        pub async fn set_value(
+            &mut self,
+            request: impl tonic::IntoRequest<super::KeyValueRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::KeyValueResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/echo.Echo/SetValue");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("echo.Echo", "SetValue"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// KeyValue store - get value
+        pub async fn get_value(
+            &mut self,
+            request: impl tonic::IntoRequest<super::KeyValueRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::KeyValueResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/echo.Echo/GetValue");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("echo.Echo", "GetValue"));
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -240,6 +304,22 @@ pub mod echo_server {
             request: tonic::Request<tonic::Streaming<super::EchoRequest>>,
         ) -> std::result::Result<
             tonic::Response<Self::BidirectionalStreamingEchoStream>,
+            tonic::Status,
+        >;
+        /// KeyValue store - set value, return RecordId or nil
+        async fn set_value(
+            &self,
+            request: tonic::Request<super::KeyValueRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::KeyValueResponse>,
+            tonic::Status,
+        >;
+        /// KeyValue store - get value
+        async fn get_value(
+            &self,
+            request: tonic::Request<super::KeyValueRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::KeyValueResponse>,
             tonic::Status,
         >;
     }
@@ -499,6 +579,90 @@ pub mod echo_server {
                                 max_encoding_message_size,
                             );
                         let res = grpc.streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/echo.Echo/SetValue" => {
+                    #[allow(non_camel_case_types)]
+                    struct SetValueSvc<T: Echo>(pub Arc<T>);
+                    impl<T: Echo> tonic::server::UnaryService<super::KeyValueRequest>
+                    for SetValueSvc<T> {
+                        type Response = super::KeyValueResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::KeyValueRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move { (*inner).set_value(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = SetValueSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/echo.Echo/GetValue" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetValueSvc<T: Echo>(pub Arc<T>);
+                    impl<T: Echo> tonic::server::UnaryService<super::KeyValueRequest>
+                    for GetValueSvc<T> {
+                        type Response = super::KeyValueResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::KeyValueRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move { (*inner).get_value(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetValueSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)

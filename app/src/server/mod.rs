@@ -2,9 +2,9 @@
 //! Server
 //!
 use crate::models::PersonRepository;
-use crate::protobuffer::{self, EchoRequest, EchoResponse};
-use crate::Ping;
-use crate::{Connection, KeyValueStore};
+use crate::protobuffer::{self, EchoRequest, EchoResponse, KeyValueRequest, KeyValueResponse};
+use crate::Connection;
+use crate::{Ping, Set};
 use colored::*;
 use derive_builder::*;
 use std::{io::ErrorKind, pin::Pin, time::Duration};
@@ -45,13 +45,12 @@ pub struct EchoServer {
 }
 
 impl EchoServer {
-    /// set a named variable
-    async fn set_message(&self, message: &str) {
-        self.person
-            .set_value(&self.connection, message)
-            .await
-            .unwrap();
-    }
+    // async fn set_message(&self, message: &str) {
+    //     self.person
+    //         .set_value(&self.connection, message)
+    //         .await
+    //         .unwrap();
+    // }
 }
 
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<EchoResponse, Status>> + Send>>;
@@ -62,24 +61,47 @@ impl protobuffer::echo_server::Echo for EchoServer {
     type ServerStreamingEchoStream = ResponseStream;
     type BidirectionalStreamingEchoStream = ResponseStream;
 
+    async fn get_value(&self, _req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
+        Ok(Response::new(KeyValueResponse {
+            status: "nil".to_owned(),
+            error: None,
+        }))
+    }
+
+    #[instrument(skip(self, req))]
+    async fn set_value(&self, req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
+        info!(message = "set_value".blue().to_string());
+        info!(message = format!("{:?}", req.remote_addr().unwrap()));
+
+        let key_value_request = req.into_inner();
+        let key = key_value_request.key;
+        let value = key_value_request.value.unwrap();
+        let cmd = Set::new(key, value);
+
+        match cmd.apply(&self.person, &self.connection).await {
+            Ok(_) => Ok(Response::new(KeyValueResponse {
+                status: "Ok".to_owned(),
+                error: None,
+            })),
+            Err(err) => Ok(Response::new(KeyValueResponse {
+                status: "Error".to_owned(),
+                error: Some(format!("{:?}", err)),
+            })),
+        }
+    }
+
     #[instrument(skip(self, req))]
     async fn unary_echo(&self, req: Request<EchoRequest>) -> EchoResult<EchoResponse> {
         info!(message = "unary_echo".blue().to_string());
         info!(message = format!("{:?}", req.remote_addr().unwrap()));
 
         let message = req.into_inner().message;
-        let cmd = Ping::new(message.clone());
-        // if message.starts_with("set_message") {
-        //     for (i, item) in message.split_whitespace().enumerate() {
-        //         if i == 1 {
-        //             self.set_message(item).await;
-        //         }
-        //     }
-        // }
+        let cmd = Ping::new(message);
+
         match cmd.apply(&self.connection).await {
             Ok(message) => Ok(Response::new(EchoResponse { message })),
             Err(_) => Ok(Response::new(EchoResponse {
-                message: "nil".to_string(),
+                message: "nil".to_owned(),
             })),
         }
     }
