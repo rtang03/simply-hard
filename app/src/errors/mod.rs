@@ -11,6 +11,8 @@ pub enum AppError {
     ConnectError(tonic::transport::Error),
     #[error("set_value error")]
     SurrealdbSetError(surrealdb::Error),
+    #[error("get_value error")]
+    SurrealdbGetError(surrealdb::Error),
     #[error("data store disconnected")]
     Disconnect(#[from] tokio::io::Error),
     #[error("the data for key `{0}` is not available")]

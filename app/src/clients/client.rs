@@ -32,6 +32,30 @@ impl Client {
         })
     }
 
+    #[instrument(skip(self, key))]
+    pub async fn get_value(&mut self, key: String) {
+        let request = Request::new(KeyValueRequest { key, value: None });
+        info!(
+            message = format!("{}", "Sending get_value request".blue()),
+            key = %request.get_ref().key,
+        );
+
+        match self.echo_client.get_value(request).await {
+            Ok(response) => {
+                let message = match response.get_ref().error.clone() {
+                    Some(err) => format!("\n{}", err.red()),
+                    None => response.get_ref().status.clone(),
+                };
+                info!(
+                    message = format!("{}", "Got a response".blue()),
+                    response = %response.get_ref().status
+                );
+                println!("\n{message}");
+            }
+            Err(err) => error!(error = format!("{:?}", err)),
+        }
+    }
+
     #[instrument(skip(self, key, value))]
     pub async fn set_value(&mut self, key: String, value: String) {
         let request = Request::new(KeyValueRequest {
@@ -46,14 +70,14 @@ impl Client {
         match self.echo_client.set_value(request).await {
             Ok(response) => {
                 let message = match response.get_ref().error.clone() {
-                    Some(err) => format!("error encountered, {}", err),
+                    Some(err) => format!("\n{}", err.red()),
                     None => response.get_ref().status.clone(),
                 };
                 info!(
                     message = format!("{}", "Got a response".blue()),
                     response = %response.get_ref().status
                 );
-                println!("{message}");
+                println!("\n{message}");
             }
             Err(err) => error!(error = format!("{:?}", err)),
         }

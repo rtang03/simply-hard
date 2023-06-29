@@ -1,4 +1,4 @@
-use crate::{AppError, Connection};
+use crate::{models::Connection, AppError};
 use tracing::instrument;
 
 /// Returns PONG if no argument is provided, otherwise

@@ -1,4 +1,5 @@
-use tracing::instrument;
+use crate::models::{Connection, KeyValueStore, PersonRepository};
+use tracing::{error, instrument};
 
 /// Get the value of the key
 #[derive(Debug)]
@@ -15,17 +16,22 @@ impl Get {
         }
     }
 
-    /// Get the key
-    pub fn key(&self) -> &str {
-        &self.key
-    }
-
     /// Apply the `Get` command to the specified `Db` instance.
     ///
     /// The response is written to `dst`. This is called by the server in order
     /// to execute a received command.
-    #[instrument(skip(self))]
-    pub(crate) async fn apply(self) -> crate::Result<()> {
-        Ok(())
+    #[instrument(skip(self, repository, conn))]
+    pub(crate) async fn apply(
+        self,
+        repository: &PersonRepository,
+        conn: &Connection,
+    ) -> crate::Result<String> {
+        match PersonRepository::get_value(repository, conn, self.key.as_str()).await {
+            Ok(result) => Ok(result.value.into()),
+            Err(err) => {
+                error!(error = format!("{:?}", err));
+                Err(err)
+            }
+        }
     }
 }

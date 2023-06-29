@@ -1,10 +1,12 @@
 //!
 //! Server
 //!
-use crate::models::PersonRepository;
-use crate::protobuffer::{self, EchoRequest, EchoResponse, KeyValueRequest, KeyValueResponse};
-use crate::Connection;
-use crate::{Ping, Set};
+
+use crate::{
+    cmd::{Get, Ping, Set},
+    models::{Connection, PersonRepository},
+    protobuffer::{self, EchoRequest, EchoResponse, KeyValueRequest, KeyValueResponse},
+};
 use colored::*;
 use derive_builder::*;
 use std::{io::ErrorKind, pin::Pin, time::Duration};
@@ -44,15 +46,6 @@ pub struct EchoServer {
     connection: Connection,
 }
 
-impl EchoServer {
-    // async fn set_message(&self, message: &str) {
-    //     self.person
-    //         .set_value(&self.connection, message)
-    //         .await
-    //         .unwrap();
-    // }
-}
-
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<EchoResponse, Status>> + Send>>;
 type EchoResult<T> = Result<Response<T>, Status>;
 
@@ -61,11 +54,21 @@ impl protobuffer::echo_server::Echo for EchoServer {
     type ServerStreamingEchoStream = ResponseStream;
     type BidirectionalStreamingEchoStream = ResponseStream;
 
-    async fn get_value(&self, _req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
-        Ok(Response::new(KeyValueResponse {
-            status: "nil".to_owned(),
-            error: None,
-        }))
+    async fn get_value(&self, req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
+        let key_value_request = req.into_inner();
+        let key = key_value_request.key;
+        let cmd = Get::new(key);
+
+        match cmd.apply(&self.person, &self.connection).await {
+            Ok(value) => Ok(Response::new(KeyValueResponse {
+                status: value,
+                error: None,
+            })),
+            Err(err) => Ok(Response::new(KeyValueResponse {
+                status: "Error".to_owned(),
+                error: Some(format!("{:?}", err)),
+            })),
+        }
     }
 
     #[instrument(skip(self, req))]

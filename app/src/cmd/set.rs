@@ -1,4 +1,4 @@
-use crate::{Connection, KeyValueStore, PersonRepository};
+use crate::models::{Connection, KeyValueStore, PersonRepository};
 use tracing::{error, instrument};
 
 /// Set `key` to hold the string `value`.

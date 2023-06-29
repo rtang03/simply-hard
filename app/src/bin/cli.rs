@@ -55,6 +55,13 @@ enum Command {
         /// value
         value: String,
     },
+
+    /// Get value by key
+    #[command(arg_required_else_help = true)]
+    Get {
+        /// key
+        key: String,
+    },
 }
 
 /// Entry point for CLI tool.
@@ -113,6 +120,9 @@ async fn main() -> app::Result<()> {
         }
         Command::Set { key, value } => {
             client.set_value(key, value).await;
+        }
+        Command::Get { key } => {
+            client.get_value(key).await;
         }
     }
 

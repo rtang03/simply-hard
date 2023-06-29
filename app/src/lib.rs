@@ -4,10 +4,8 @@
 // #![warn(missing_docs)]
 
 mod settings;
-mod models;
 mod cmd;
-pub use cmd::*;
-pub use models::*;
+pub mod models;
 pub mod clients;
 pub mod server;
 pub mod errors;
@@ -18,9 +16,6 @@ pub use settings::{Settings, GLOBAL_SETTINGS};
 ///
 /// Used if no port is specified.
 pub const DEFAULT_PORT: u16 = 50051;
-
-// can remove later
-pub mod echo;
 
 ///
 /// Generated code from protoc

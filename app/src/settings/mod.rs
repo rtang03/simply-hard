@@ -59,8 +59,15 @@ impl Settings {
             };
 
             // TODO: change loading sample_env from static file, as a future enhancement
-            let sample_env = "debug = true";
-
+            let sample_env = r#"
+debug = true
+SURREALDB_PORT = 8000
+SURREALDB_HOST = "127.0.0.1"
+SURREALDB_DB = "test"
+SURREALDB_NS = "test"
+SURREALDB_USERNAME = "root"
+SURREALDB_PASSWORD = "root"
+"#;
             match new_file.write_all(sample_env.as_bytes()) {
                 Ok(_) => info!(message = format!("{}", "env.toml created successfully.".blue())),
                 Err(e) => panic!("Could not write to file {}: {}", display, e),

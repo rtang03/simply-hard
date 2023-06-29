@@ -9,8 +9,10 @@
 extern crate derive_builder;
 
 use app::{
-    protobuffer, server::EchoServerBuilder, Connection, PersonRepository, Settings, DEFAULT_PORT,
-    GLOBAL_SETTINGS,
+    models::{Connection, PersonRepository},
+    protobuffer,
+    server::EchoServerBuilder,
+    Settings, DEFAULT_PORT, GLOBAL_SETTINGS,
 };
 use clap::Parser;
 use colored::*;
