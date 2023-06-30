@@ -59,8 +59,7 @@ impl Settings {
             };
 
             // TODO: change loading sample_env from static file, as a future enhancement
-            let sample_env = r#"
-debug = true
+            let sample_env = r#"debug = true
 SURREALDB_PORT = 8000
 SURREALDB_HOST = "127.0.0.1"
 SURREALDB_DB = "test"

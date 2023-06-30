@@ -2,7 +2,7 @@
 //! Surreal database
 //!
 
-#[cfg(feature = "server")]
+#[cfg(feature = "default")]
 mod repository;
 pub use repository::*;
 

@@ -142,6 +142,7 @@ async fn main() -> app::Result<()> {
 #[test]
 fn test_cli_unary_echo() {
     use app::{
+        models::{Connection, PersonRepository},
         protobuffer::{self, echo_client::EchoClient},
         server::EchoServerBuilder,
     };
@@ -156,9 +157,11 @@ fn test_cli_unary_echo() {
         .build()
         .unwrap()
         .block_on(async {
+            let person_repository = PersonRepository::default();
             let (client, server) = tokio::io::duplex(1024);
             let simply_server = EchoServerBuilder::default()
-                // .connection(Connection::new().await)
+                .person(person_repository)
+                .connection(Connection::new().await)
                 .build()
                 .unwrap();
 
@@ -200,6 +203,7 @@ fn test_cli_unary_echo() {
             let response: Response<protobuffer::EchoResponse> =
                 client.unary_echo(request).await.unwrap();
 
-            assert_eq!(response.get_ref().message, "foo");
+            // println!("{:?}", response);
+            assert_eq!(response.get_ref().message, "FOO");
         })
 }
