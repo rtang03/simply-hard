@@ -1,3 +1,4 @@
+// NOTE:
 // https://github.com/hyperium/tonic/blob/master/examples/build.rs
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -5,23 +5,38 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AppError {
+    /// Surrealdb: Fail to connect db
+    #[error("database is unhealthy")]
+    DbConnectError(surrealdb::Error),
+
+    /// Surrealdb: Unhealthy
     #[error("database is unhealthy")]
     SurrealdbUnHealthy(surrealdb::Error),
-    #[error("tonic error")]
-    ConnectError(tonic::transport::Error),
+
+    /// Surrealdb: set_value error
     #[error("set_value error")]
     SurrealdbSetError(surrealdb::Error),
+
+    /// Surrealdb: get_value error
     #[error("get_value error")]
     SurrealdbGetError(surrealdb::Error),
+
+    /// grpc: Fail to connect server
+    #[error("tonic error")]
+    GrpcConnectError(tonic::transport::Error),
+
     #[error("data store disconnected")]
     Disconnect(#[from] tokio::io::Error),
+
     #[error("the data for key `{0}` is not available")]
     Redaction(String),
     #[error("invalid header (expected {expected:?}, found {found:?})")]
     InvalidHeader { expected: String, found: String },
     #[error("standard application error")]
     StdError(Box<dyn std::error::Error + Send + Sync>),
-    #[error("unknown data store error")]
+    
+    /// Unknown error
+    #[error("unknown error")]
     Unknown,
 }
 

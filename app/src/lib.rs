@@ -9,6 +9,10 @@ pub mod models;
 pub mod clients;
 pub mod server;
 pub mod errors;
+
+mod connection;
+pub use connection::*;
+
 pub use errors::*;
 pub use settings::{Settings, GLOBAL_SETTINGS};
 

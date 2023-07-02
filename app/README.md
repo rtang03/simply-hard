@@ -19,3 +19,8 @@
 -   Key derivation function
 -   docker + wasm
 -   Mock EchoServer
+
+
+docker buildx build . --tag simply_hard:0.1.0
+
+https://github.com/johnthagen/min-sized-rust

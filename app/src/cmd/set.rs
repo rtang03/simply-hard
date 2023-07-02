@@ -1,4 +1,7 @@
-use crate::models::{Connection, KeyValueStore, PersonRepository};
+use crate::{
+    models::{KeyValueStore, PersonRepository},
+    Connection, InMemoryDatabase,
+};
 use tracing::{error, instrument};
 
 /// Set `key` to hold the string `value`.
@@ -39,11 +42,14 @@ impl Set {
     /// returned.
     ///
     #[instrument(skip(self, repository, conn))]
-    pub(crate) async fn apply(
+    pub(crate) async fn apply<C>(
         self,
         repository: &PersonRepository,
-        conn: &Connection,
-    ) -> crate::Result<String> {
+        conn: &C,
+    ) -> crate::Result<String>
+    where
+        C: Connection<Output = InMemoryDatabase> + Send + Sync,
+    {
         match PersonRepository::set_value(repository, conn, self.key.as_str(), self.value.as_str())
             .await
         {

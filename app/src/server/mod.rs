@@ -4,8 +4,9 @@
 
 use crate::{
     cmd::{Get, Ping, Set},
-    models::{Connection, PersonRepository},
+    models::PersonRepository,
     protobuffer::{self, EchoRequest, EchoResponse, KeyValueRequest, KeyValueResponse},
+    Connection, InMemoryDatabase,
 };
 use colored::*;
 use derive_builder::*;
@@ -41,16 +42,21 @@ fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
 /// Simply Echo Server
 #[cfg_attr(feature = "server", derive(Debug, Builder))]
 #[builder(pattern = "owned")]
-pub struct EchoServer {
+pub struct EchoServer<
+    C: Connection<Output = InMemoryDatabase> + Sync + Send + std::fmt::Debug + 'static,
+> {
     person: PersonRepository,
-    connection: Connection,
+    connection: C,
 }
 
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<EchoResponse, Status>> + Send>>;
 type EchoResult<T> = Result<Response<T>, Status>;
 
 #[tonic::async_trait]
-impl protobuffer::echo_server::Echo for EchoServer {
+impl<C> protobuffer::echo_server::Echo for EchoServer<C>
+where
+    C: Connection<Output = InMemoryDatabase> + Sync + Send + std::fmt::Debug + 'static,
+{
     type ServerStreamingEchoStream = ResponseStream;
     type BidirectionalStreamingEchoStream = ResponseStream;
 

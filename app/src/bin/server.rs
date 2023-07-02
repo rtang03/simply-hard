@@ -9,9 +9,7 @@
 extern crate derive_builder;
 
 use app::{
-    models::{Connection, PersonRepository},
-    protobuffer,
-    server::EchoServerBuilder,
+    models::PersonRepository, protobuffer, server::EchoServerBuilder, Connection, InMemoryDatabase,
     Settings, DEFAULT_PORT, GLOBAL_SETTINGS,
 };
 use clap::Parser;
@@ -52,7 +50,7 @@ async fn main() -> Result<(), tonic::transport::Error> {
 
     let simply_server = EchoServerBuilder::default()
         .person(person_repository)
-        .connection(Connection::new().await)
+        .connection(<InMemoryDatabase as Connection>::new().await)
         .build()
         .unwrap();
 

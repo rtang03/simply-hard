@@ -142,9 +142,10 @@ async fn main() -> app::Result<()> {
 #[test]
 fn test_cli_unary_echo() {
     use app::{
-        models::{Connection, PersonRepository},
+        models::PersonRepository,
         protobuffer::{self, echo_client::EchoClient},
         server::EchoServerBuilder,
+        Connection, InMemoryDatabase,
     };
     use tonic::{
         transport::{Endpoint, Server, Uri},
@@ -159,9 +160,10 @@ fn test_cli_unary_echo() {
         .block_on(async {
             let person_repository = PersonRepository::default();
             let (client, server) = tokio::io::duplex(1024);
+
             let simply_server = EchoServerBuilder::default()
                 .person(person_repository)
-                .connection(Connection::new().await)
+                .connection(<InMemoryDatabase as Connection>::new().await)
                 .build()
                 .unwrap();
 
