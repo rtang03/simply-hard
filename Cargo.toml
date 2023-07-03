@@ -1,2 +1,2 @@
 [workspace]
-members = ["app", "cli"]
+members = ["app"]
