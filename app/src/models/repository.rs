@@ -1,5 +1,4 @@
 use crate::{models::KeyValue, AppError, Connection, InMemoryDatabase};
-use async_trait::async_trait;
 
 // NOTE:
 // https://github.com/surrealdb/surrealdb/tree/main/lib
@@ -7,7 +6,7 @@ use async_trait::async_trait;
 #[derive(Debug, Default, Clone)]
 pub struct PersonRepository {}
 
-#[async_trait]
+#[tonic::async_trait]
 pub trait KeyValueStore<'a> {
     type Output;
 
@@ -25,7 +24,7 @@ pub trait KeyValueStore<'a> {
         C: Connection<Output = InMemoryDatabase> + Send + Sync;
 }
 
-#[async_trait]
+#[tonic::async_trait]
 impl<'a> KeyValueStore<'a> for PersonRepository {
     type Output = KeyValue<'a>;
 

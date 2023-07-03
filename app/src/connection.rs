@@ -1,6 +1,10 @@
 use crate::Settings;
 use colored::Colorize;
-use surrealdb::{engine::local::Mem, engine::remote::ws::Ws, opt::auth::Root, Surreal};
+use surrealdb::{
+    engine::{local::Mem, remote::ws::Ws},
+    opt::auth::Root,
+    Surreal,
+};
 use tracing::{error, info};
 
 /// Inmemory database
@@ -54,6 +58,7 @@ impl Connection for InMemoryDatabase {
 
         // NOTE: if () is change to "Strict" server mode, will throw an NSNotFound exception
         // when submittting query.
+        // see https://github.com/surrealdb/surrealdb/issues/13
         let db: surrealdb::Result<Surreal<surrealdb::engine::local::Db>> =
             Surreal::new::<Mem>(()).await;
 
