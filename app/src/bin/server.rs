@@ -61,7 +61,8 @@ async fn main() -> Result<(), tonic::transport::Error> {
             result
         }
     };
-    let addr = format!("[::1]:{}", cli.port).parse().unwrap();
+    let addr = format!("0.0.0.0:{}", cli.port).parse().unwrap();
+    // let addr = format!("[::1]:{}", cli.port).parse().unwrap();
 
     info!("{}", format!("Server listening on {:?}", addr).blue());
 

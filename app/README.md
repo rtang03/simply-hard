@@ -22,6 +22,8 @@
 -   docker
 -   Mock EchoServer
 
-docker buildx build . --tag simply_hard:0.1.0
+docker buildx build . --tag simply-hard:latest
 
 https://github.com/johnthagen/min-sized-rust
+https://andygrove.io/2020/05/why-musl-extremely-slow/
+https://dev.to/rogertorres/first-steps-with-docker-rust-30oi

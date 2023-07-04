@@ -7,6 +7,9 @@ use surrealdb::{
 };
 use tracing::{error, info};
 
+#[derive(Debug)]
+pub struct DummyDatabase {}
+
 /// Inmemory database
 #[derive(Debug)]
 pub struct InMemoryDatabase {
@@ -31,7 +34,10 @@ pub struct RemoteDatabase {
 #[tonic::async_trait]
 pub trait Connection {
     type Output;
+
     async fn new() -> Self;
+
+    /// get database connection
     fn get_db(&self) -> Self::Output;
 }
 

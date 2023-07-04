@@ -96,7 +96,7 @@ async fn main() -> app::Result<()> {
     let cli = Cli::parse();
 
     // Get the remote address to connect to
-    let addr = format!("http://[::1]:{}", cli.port);
+    let addr = format!("http://0.0.0.0:{}", cli.port);
 
     info!(message = format!("{}", "Connecting".blue()), addr);
 
