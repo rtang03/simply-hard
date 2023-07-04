@@ -1,0 +1,11 @@
+*
+!src/
+!proto/
+!examples/
+!bench/
+!scripts/
+!tests/
+!public/
+!build.rs
+!Cargo.toml
+!env.toml
