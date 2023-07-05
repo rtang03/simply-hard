@@ -1,6 +1,8 @@
 // NOTE
 // https://github.com/rlebran/Rust-distributed-tracing-example/blob/master/common/src/lib.rs
 // https://medium.com/better-programming/distributed-tracing-in-rust-b8eb2af3aff4
+// https://github.com/open-telemetry/opentelemetry-rust/blob/main/examples/tracing-grpc/src/server.rs
+// https://github.com/rthomas/rust-tonic-jaeger-example
 // docker run -d -p6831:6831/udp -p6832:6832/udp -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest
 
 #[cfg(not(feature = "otel"))]
@@ -32,7 +34,7 @@ pub fn set_up_logging() -> crate::Result<()> {
     // https://docs.rs/opentelemetry-jaeger/0.18.0/opentelemetry_jaeger/
     let tracer = opentelemetry_jaeger::new_agent_pipeline()
         .with_service_name("simply-server")
-        .install_simple()
+        .install_batch(opentelemetry::runtime::Tokio)
         .expect("Unable to initialize OtlpPipeline");
 
     // Create a tracing layer with the configured opentelemetry

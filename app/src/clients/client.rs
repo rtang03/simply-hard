@@ -1,3 +1,6 @@
+// NOTE:
+// https://github.com/open-telemetry/opentelemetry-rust/blob/main/examples/tracing-grpc/src/client.rs
+
 use crate::{
     protobuffer::{echo_client::EchoClient, EchoRequest, KeyValueRequest},
     AppError,
@@ -7,6 +10,23 @@ use std::time::Duration;
 use tokio_stream::{Stream, StreamExt};
 use tonic::{codegen::StdError, transport::Channel, Request};
 use tracing::{error, info, instrument};
+#[cfg(feature = "otel")]
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+
+#[cfg(feature = "otel")]
+struct MetadataMap<'a>(&'a mut tonic::metadata::MetadataMap);
+
+#[cfg(feature = "otel")]
+impl<'a> opentelemetry::propagation::Injector for MetadataMap<'a> {
+    /// Set a key and value in the MetadataMap.  Does nothing if the key or value are not valid inputs
+    fn set(&mut self, key: &str, value: String) {
+        if let Ok(key) = tonic::metadata::MetadataKey::from_bytes(key.as_bytes()) {
+            if let Ok(val) = tonic::metadata::MetadataValue::try_from(&value) {
+                self.0.insert(key, val);
+            }
+        }
+    }
+}
 
 #[cfg_attr(feature = "cli", derive(Debug))]
 pub struct Client {
@@ -14,12 +34,30 @@ pub struct Client {
 }
 
 impl Client {
+    #[cfg(not(feature = "otel"))]
     pub async fn connect<D>(addr: D) -> crate::Result<Client>
     where
         D: TryInto<tonic::transport::Endpoint>,
         D::Error: Into<StdError>,
     {
         match EchoClient::connect(addr).await {
+            Ok(echo_client) => Ok(Client { echo_client }),
+            Err(err) => Err(AppError::TonicError(err)),
+        }
+    }
+
+    #[cfg(feature = "otel")]
+    pub async fn connect<D>(addr: D) -> crate::Result<Client>
+    where
+        D: TryInto<tonic::transport::Endpoint>,
+        D::Error: Into<StdError>,
+    {
+        use tracing::{info_span, Instrument};
+
+        match EchoClient::connect(addr)
+            .instrument(info_span!("client connect"))
+            .await
+        {
             Ok(echo_client) => Ok(Client { echo_client }),
             Err(err) => Err(AppError::TonicError(err)),
         }
@@ -32,15 +70,30 @@ impl Client {
         })
     }
 
+    #[cfg(feature = "otel")]
     #[instrument(skip(self, key))]
     pub async fn get_value(&mut self, key: String) {
-        let request = Request::new(KeyValueRequest { key, value: None });
+        use tracing::{info_span, Instrument};
+
+        let mut request = Request::new(KeyValueRequest { key, value: None });
         info!(
             message = format!("{}", "Sending get_value request".blue()),
             key = %request.get_ref().key,
         );
 
-        match self.echo_client.get_value(request).await {
+        opentelemetry::global::get_text_map_propagator(|propagator| {
+            propagator.inject_context(
+                &tracing::Span::current().context(),
+                &mut MetadataMap(request.metadata_mut()),
+            )
+        });
+
+        match self
+            .echo_client
+            .get_value(request)
+            .instrument(info_span!("send_get_value_request"))
+            .await
+        {
             Ok(response) => {
                 let message = match response.get_ref().error.clone() {
                     Some(err) => format!("\n{}", err.red()),

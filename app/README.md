@@ -28,4 +28,8 @@ docker run -d -p6831:6831/udp -p6832:6832/udp -p16686:16686 -p14268:14268 jaeger
 
 # run server, when using otel feature
 RUST_LOG="DEBUG" cargo run --bin simply-server
+
 ```
+
+### jaeger
+[jaeger ui](http://localhost:16686/search)

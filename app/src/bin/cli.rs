@@ -77,20 +77,9 @@ enum Command {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> app::Result<()> {
     use colored::*;
-    use tracing::{info, Level};
-    use tracing_subscriber::FmtSubscriber;
+    use tracing::info;
 
-    // Enable logging
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .compact()
-        .with_file(false)
-        .with_line_number(true)
-        .with_thread_ids(false)
-        .finish();
-
-    // use that subscriber to process traces emitted after this point
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+    app::clients::set_up_logging()?;
 
     // Parse command line arguments
     let cli = Cli::parse();
@@ -125,6 +114,8 @@ async fn main() -> app::Result<()> {
             client.get_value(key).await;
         }
     }
+
+    app::clients::shutdown_tracer_provider();
 
     Ok(())
 }

@@ -11,9 +11,6 @@ pub mod server;
 mod settings;
 
 mod connection;
-mod setup_logging;
-pub use setup_logging::{set_up_logging, shutdown_tracer_provider};
-
 pub use connection::*;
 
 pub use errors::*;

@@ -28,7 +28,7 @@ async fn main() -> app::Result<()> {
     use tonic::transport::Server;
     use tracing::{info, info_span};
 
-    app::set_up_logging()?;
+    app::server::set_up_logging()?;
 
     Settings::new();
     Settings::print_config("Initial").await;
@@ -56,7 +56,7 @@ async fn main() -> app::Result<()> {
     info!("{}", format!("Server listening on {:?}", addr).blue());
 
     let server = Server::builder()
-        .trace_fn(|_| info_span!("echo_server"))
+        .trace_fn(|_| info_span!("bootstrap_echo_server"))
         .add_service(protobuffer::echo_server::EchoServer::new(simply_server))
         .serve_with_shutdown(addr, graceful_shutdown);
 
@@ -69,7 +69,7 @@ async fn main() -> app::Result<()> {
 
     match server.await {
         Ok(_) => {
-            app::shutdown_tracer_provider();
+            app::server::shutdown_tracer_provider();
             Ok(())
         }
         Err(err) => Err(app::AppError::TonicError(err)),

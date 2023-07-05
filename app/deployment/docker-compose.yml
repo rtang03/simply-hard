@@ -1,0 +1,96 @@
+version: "3"
+volumes:
+    prometheus_data: {}
+    grafana_data: {}
+
+# NOTE:
+# https://github.com/open-telemetry/opentelemetry-rust/blob/main/opentelemetry-jaeger/examples/remote-sampler/docker-compose.yaml
+
+networks:
+    openplatform:
+
+services:
+    postgresql:
+        build:
+            context: ../
+            dockerfile: ./Dockerfile
+        ports:
+            - "50051:50051"
+
+    jaeger-all-in-one:
+        networks:
+            - openplatform
+        container_name: jaeger
+        image: jaegertracing/all-in-one:latest
+        environment:
+            - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+        ports:
+            - "5775"
+            - "6831"
+            - "6832"
+            - "5778"
+            - "16686"
+            - "16686:16686"
+            - "14268:14268"
+            - "14250"
+            - "9411"
+
+    # prometheus:
+    #   networks:
+    #     - openplatform
+    #   container_name: prometheus
+    #   image: prom/prometheus:v2.32.0
+    #   volumes:
+    #     - ./prometheus/:/etc/prometheus/
+    #     - prometheus_data:/prometheus
+    #   command:
+    #     # can reload configuration files (e.g. rules) without restarting Prometheus
+    #     - '--web.enable-lifecycle'
+    #     - '--config.file=/etc/prometheus/prometheus.yml'
+    #   ports:
+    #     - "9090:9090"
+# https://github.com/open-telemetry/opentelemetry-collector/tree/main/examples/local
+# otel-collector:
+#   networks:
+#     - openplatform
+#   container_name: collector
+#   image: otel/opentelemetry-collector:0.27.0
+#   command: ["--config=/conf/collector-config.yaml", "--log-level=DEBUG"]
+#   volumes:
+#     - ./ot/collector-config.yaml:/conf/collector-config.yaml
+#   ports:
+#     - "9464:9464"
+#     - "4317:4317"
+#     - "55681:55681"
+#   depends_on:
+#     - jaeger-all-in-one
+
+# postgres:
+#   # https://github.com/bitnami/bitnami-docker-postgresql#configuration
+#   container_name: postgres
+#   image: postgres:10.19-alpine3.15
+#   environment:
+#     - POSTGRES_PASSWORD=docker
+#     - POSTGRES_USER=postgres
+#     - POSTGRES_DB=postgres
+#   volumes:
+#     - ./volume/postgres:/var/lib/postgresql/data
+#     - ./scripts/psql/createdb.sql:/docker-entrypoint-initdb.d/1-createdb.sql
+#     - ./scripts/psql/init-db.sh:/docker-entrypoint-initdb.d/2-init-db.sh
+#   command: postgres
+#   ports:
+#     - "15432:5432"
+#   networks:
+#     - openplatform
+
+#  grafana:
+#    networks:
+#      - openplatform
+#    container_name: grafana
+#    image: grafana/grafana:8.3.3
+#    ports:
+#      - "3000:3000"
+#    restart: unless-stopped
+#    volumes:
+#      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+#      - grafana_data:/var/lib/grafana

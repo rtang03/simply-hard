@@ -2,6 +2,11 @@
 //! Server
 //!
 
+mod setup_logging;
+pub use setup_logging::{set_up_logging, shutdown_tracer_provider};
+
+// NOTE:
+// https://github.com/open-telemetry/opentelemetry-rust/blob/main/examples/tracing-grpc/src/server.rs
 use crate::{
     cmd::{Get, Ping, Set},
     models::PersonRepository,
@@ -10,11 +15,39 @@ use crate::{
 };
 use colored::*;
 use derive_builder::*;
+#[cfg(feature = "otel")]
+use opentelemetry::{global, propagation::Extractor};
 use std::{io::ErrorKind, pin::Pin, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 use tonic::{Request, Response, Status, Streaming};
+#[cfg(feature = "otel")]
+use tracing::Span;
 use tracing::{error, info, instrument};
+#[cfg(feature = "otel")]
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+
+#[cfg(feature = "otel")]
+struct MetadataMap<'a>(&'a tonic::metadata::MetadataMap);
+
+#[cfg(feature = "otel")]
+impl<'a> Extractor for MetadataMap<'a> {
+    /// Get a value for a key from the MetadataMap.  If the value can't be converted to &str, returns None
+    fn get(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|metadata| metadata.to_str().ok())
+    }
+
+    /// Collect all the keys from the MetadataMap.
+    fn keys(&self) -> Vec<&str> {
+        self.0
+            .keys()
+            .map(|key| match key {
+                tonic::metadata::KeyRef::Ascii(v) => v.as_str(),
+                tonic::metadata::KeyRef::Binary(v) => v.as_str(),
+            })
+            .collect::<Vec<_>>()
+    }
+}
 
 fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
     let mut err: &(dyn std::error::Error + 'static) = err_status;
@@ -62,6 +95,11 @@ where
 
     #[instrument(skip(self, req))]
     async fn get_value(&self, req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
+        #[cfg(feature = "otel")]
+        Span::current().set_parent(global::get_text_map_propagator(|prop| {
+            prop.extract(&MetadataMap(req.metadata()))
+        }));
+
         let key_value_request = req.into_inner();
         let key = key_value_request.key;
         let cmd = Get::new(key);
@@ -80,6 +118,11 @@ where
 
     #[instrument(skip(self, req))]
     async fn set_value(&self, req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
+        #[cfg(feature = "otel")]
+        Span::current().set_parent(global::get_text_map_propagator(|prop| {
+            prop.extract(&MetadataMap(req.metadata()))
+        }));
+
         info!(message = "set_value".blue().to_string());
         info!(message = format!("{:?}", req.remote_addr().unwrap()));
 
@@ -116,9 +159,7 @@ where
         }
     }
 
-    // NOTE:
-    // #[instrument] append EchoServer in the tracing log stdout
-    #[instrument]
+    #[instrument(skip(self, req))]
     async fn client_streaming_echo(
         &self,
         req: Request<Streaming<EchoRequest>>,
@@ -170,7 +211,7 @@ where
         }
     }
 
-    #[instrument]
+    #[instrument(skip(self, req))]
     async fn server_streaming_echo(
         &self,
         req: Request<EchoRequest>,
@@ -217,7 +258,7 @@ where
         ))
     }
 
-    #[instrument]
+    #[instrument(skip(self, req))]
     async fn bidirectional_streaming_echo(
         &self,
         req: Request<Streaming<EchoRequest>>,
