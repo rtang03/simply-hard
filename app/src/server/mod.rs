@@ -60,6 +60,7 @@ where
     type ServerStreamingEchoStream = ResponseStream;
     type BidirectionalStreamingEchoStream = ResponseStream;
 
+    #[instrument(skip(self, req))]
     async fn get_value(&self, req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
         let key_value_request = req.into_inner();
         let key = key_value_request.key;

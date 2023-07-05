@@ -3,14 +3,17 @@
 //!
 // #![warn(missing_docs)]
 
-mod settings;
-mod cmd;
-pub mod models;
 pub mod clients;
-pub mod server;
+mod cmd;
 pub mod errors;
+pub mod models;
+pub mod server;
+mod settings;
 
 mod connection;
+mod setup_logging;
+pub use setup_logging::{set_up_logging, shutdown_tracer_provider};
+
 pub use connection::*;
 
 pub use errors::*;
@@ -24,6 +27,7 @@ pub const DEFAULT_PORT: u16 = 50051;
 ///
 /// Generated code from protoc
 ///
+#[allow(clippy::derive_partial_eq_without_eq)]
 pub mod protobuffer {
     include!("./echo.rs");
 }

@@ -1,2 +1,29 @@
 [workspace]
 members = ["app"]
+
+# https://www.youtube.com/watch?v=b2qe3L4BX-Y&list=WL&index=51&t=27s
+# https://github.com/johnthagen/min-sized-rust
+[profile.release]
+panic = "abort"
+strip = true
+opt-level = "s"
+lto = true
+
+[profile.bench]
+opt-level = 3
+debug = false
+rpath = false
+lto = "thin"
+incremental = true
+debug-assertions = false
+
+[profile.dev]
+opt-level = 0
+panic = 'abort'
+
+[profile.test]
+opt-level = 3
+lto = "thin"
+incremental = true
+debug-assertions = true
+debug = true

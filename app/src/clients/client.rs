@@ -21,7 +21,7 @@ impl Client {
     {
         match EchoClient::connect(addr).await {
             Ok(echo_client) => Ok(Client { echo_client }),
-            Err(err) => Err(AppError::GrpcConnectError(err)),
+            Err(err) => Err(AppError::TonicError(err)),
         }
     }
 

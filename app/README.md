@@ -1,14 +1,11 @@
 # Done
 
--   Global Settings
--   Grpc echo server and cli
--   tracing
--   Apply configuration changes, and live reload
--   Graceful shutdown
--   Sample tonic test
--   Remote database
--   Embedded (inmemory) databases
--   custom thisError
+-   Global Settings (`Config` crate) & live reload (`Notify` crate)
+-   Grpc echo server (`Tonic` crate), with graceful shutdown
+-   Distributed tracing (`Tracing`, `Opentelemetry` crate) with jaeger
+-   Remote & Embedded (inmemory) database (`surreal` crate)
+-   custom error (`thisError` crate)
+-   docker build to alpine linux, with musl build
 
 # Todo
 
@@ -19,11 +16,16 @@
 -   Add: chrono, url, syn, tempfile, packing_lot, rayon
 -   mime, ring, tower, indicatif, slab, console
 -   Key derivation function
--   docker
 -   Mock EchoServer
 
+### Useful commands
+```shell
+# build
 docker buildx build . --tag simply-hard:latest
 
-https://github.com/johnthagen/min-sized-rust
-https://andygrove.io/2020/05/why-musl-extremely-slow/
-https://dev.to/rogertorres/first-steps-with-docker-rust-30oi
+# deploy jaeger
+docker run -d -p6831:6831/udp -p6832:6832/udp -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest
+
+# run server, when using otel feature
+RUST_LOG="DEBUG" cargo run --bin simply-server
+```
