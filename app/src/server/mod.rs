@@ -2,6 +2,11 @@
 //! Server
 //!
 
+mod setup_logging;
+pub use setup_logging::{set_up_logging, shutdown_tracer_provider};
+
+// NOTE:
+// https://github.com/open-telemetry/opentelemetry-rust/blob/main/examples/tracing-grpc/src/server.rs
 use crate::{
     cmd::{Get, Ping, Set},
     models::PersonRepository,
@@ -10,11 +15,37 @@ use crate::{
 };
 use colored::*;
 use derive_builder::*;
+#[cfg(feature = "otel")]
+use opentelemetry::{global, propagation::Extractor};
 use std::{io::ErrorKind, pin::Pin, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 use tonic::{Request, Response, Status, Streaming};
 use tracing::{error, info, instrument};
+#[cfg(feature = "otel")]
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+
+#[cfg(feature = "otel")]
+struct MetadataMap<'a>(&'a tonic::metadata::MetadataMap);
+
+#[cfg(feature = "otel")]
+impl<'a> Extractor for MetadataMap<'a> {
+    /// Get a value for a key from the MetadataMap.  If the value can't be converted to &str, returns None
+    fn get(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|metadata| metadata.to_str().ok())
+    }
+
+    /// Collect all the keys from the MetadataMap.
+    fn keys(&self) -> Vec<&str> {
+        self.0
+            .keys()
+            .map(|key| match key {
+                tonic::metadata::KeyRef::Ascii(v) => v.as_str(),
+                tonic::metadata::KeyRef::Binary(v) => v.as_str(),
+            })
+            .collect::<Vec<_>>()
+    }
+}
 
 fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
     let mut err: &(dyn std::error::Error + 'static) = err_status;
@@ -52,6 +83,26 @@ pub struct EchoServer<
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<EchoResponse, Status>> + Send>>;
 type EchoResult<T> = Result<Response<T>, Status>;
 
+impl<C: Connection<Output = InMemoryDatabase> + Sync + Send + std::fmt::Debug + 'static>
+    EchoServer<C>
+{
+    #[cfg(feature = "otel")]
+    fn inject_context(request: &Request<KeyValueRequest>) {
+        tracing::span::Span::current().set_parent(global::get_text_map_propagator(|prop| {
+            prop.extract(&MetadataMap(request.metadata()))
+        }));
+    }
+
+    #[cfg(not(feature = "otel"))]
+    fn inject_context(_request: &Request<KeyValueRequest>) {}
+
+    #[instrument]
+    fn expensive_fn(to_print: String) {
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        info!("{}", to_print);
+    }
+}
+
 #[tonic::async_trait]
 impl<C> protobuffer::echo_server::Echo for EchoServer<C>
 where
@@ -60,7 +111,12 @@ where
     type ServerStreamingEchoStream = ResponseStream;
     type BidirectionalStreamingEchoStream = ResponseStream;
 
+    #[instrument(skip(self, req), name = "recv_get_value_request")]
     async fn get_value(&self, req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
+        Self::inject_context(&req);
+
+        info!(message = "get_value".blue().to_string());
+
         let key_value_request = req.into_inner();
         let key = key_value_request.key;
         let cmd = Get::new(key);
@@ -77,10 +133,11 @@ where
         }
     }
 
-    #[instrument(skip(self, req))]
+    #[instrument(skip(self, req), name = "recv_set_value_request")]
     async fn set_value(&self, req: Request<KeyValueRequest>) -> EchoResult<KeyValueResponse> {
+        Self::inject_context(&req);
+
         info!(message = "set_value".blue().to_string());
-        info!(message = format!("{:?}", req.remote_addr().unwrap()));
 
         let key_value_request = req.into_inner();
         let key = key_value_request.key;
@@ -115,9 +172,7 @@ where
         }
     }
 
-    // NOTE:
-    // #[instrument] append EchoServer in the tracing log stdout
-    #[instrument]
+    #[instrument(skip(self, req))]
     async fn client_streaming_echo(
         &self,
         req: Request<Streaming<EchoRequest>>,
@@ -169,7 +224,7 @@ where
         }
     }
 
-    #[instrument]
+    #[instrument(skip(self, req))]
     async fn server_streaming_echo(
         &self,
         req: Request<EchoRequest>,
@@ -216,7 +271,7 @@ where
         ))
     }
 
-    #[instrument]
+    #[instrument(skip(self, req))]
     async fn bidirectional_streaming_echo(
         &self,
         req: Request<Streaming<EchoRequest>>,

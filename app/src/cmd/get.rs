@@ -21,7 +21,7 @@ impl Get {
     ///
     /// The response is written to `dst`. This is called by the server in order
     /// to execute a received command.
-    #[instrument(skip(self, repository, conn))]
+    #[instrument(skip(self, repository, conn), name = "db_get_value")]
     pub(crate) async fn apply<C>(
         self,
         repository: &PersonRepository,

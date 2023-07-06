@@ -1,0 +1,120 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'app'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=app"
+        ],
+        "filter": {
+          "name": "app",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'simply-cli'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=simply-cli",
+          "--package=app"
+        ],
+        "filter": {
+          "name": "simply-cli",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'simply-cli'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=simply-cli",
+          "--package=app"
+        ],
+        "filter": {
+          "name": "simply-cli",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'simply-server'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=simply-server",
+          "--package=app"
+        ],
+        "filter": {
+          "name": "simply-server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'simply-server'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=simply-server",
+          "--package=app"
+        ],
+        "filter": {
+          "name": "simply-server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'server_streams'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=server_streams",
+          "--package=app"
+        ],
+        "filter": {
+          "name": "server_streams",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

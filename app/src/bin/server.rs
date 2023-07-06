@@ -24,22 +24,11 @@ struct Cli {
 
 #[cfg(feature = "server")]
 #[tokio::main]
-async fn main() -> Result<(), tonic::transport::Error> {
+async fn main() -> app::Result<()> {
     use tonic::transport::Server;
-    use tracing::{info, info_span, Level};
-    use tracing_subscriber::FmtSubscriber;
+    use tracing::info;
 
-    // construct a subscriber that prints formatted traces to stdout
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::DEBUG)
-        .compact()
-        .with_file(true)
-        .with_line_number(true)
-        .with_thread_ids(true)
-        .finish();
-
-    // use that subscriber to process traces emitted after this point
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+    app::server::set_up_logging()?;
 
     Settings::new();
     Settings::print_config("Initial").await;
@@ -67,7 +56,8 @@ async fn main() -> Result<(), tonic::transport::Error> {
     info!("{}", format!("Server listening on {:?}", addr).blue());
 
     let server = Server::builder()
-        .trace_fn(|_| info_span!("echo_server"))
+        // FIXME: this is not useful
+        // .trace_fn(|_| info_span!("serving_echo_server"))
         .add_service(protobuffer::echo_server::EchoServer::new(simply_server))
         .serve_with_shutdown(addr, graceful_shutdown);
 
@@ -78,7 +68,11 @@ async fn main() -> Result<(), tonic::transport::Error> {
         }
     });
 
-    server.await?;
-
-    Ok(())
+    match server.await {
+        Ok(_) => {
+            app::server::shutdown_tracer_provider();
+            Ok(())
+        }
+        Err(err) => Err(app::AppError::TonicError(err)),
+    }
 }

@@ -23,18 +23,24 @@ pub enum AppError {
 
     /// grpc: Fail to connect server
     #[error("tonic error")]
-    GrpcConnectError(tonic::transport::Error),
+    TonicError(tonic::transport::Error),
 
+    /// Tracing
+    #[error("tracing-subscriber init error")]
+    TracingSubscriberInitError(tracing_subscriber::util::TryInitError),
+
+    #[error("tracing setGlobalDefaultError")]
+    TracingSetGlobalDefaultError(tracing::subscriber::SetGlobalDefaultError),
+
+    // TODO: clean up below errors
     #[error("data store disconnected")]
     Disconnect(#[from] tokio::io::Error),
-
     #[error("the data for key `{0}` is not available")]
     Redaction(String),
     #[error("invalid header (expected {expected:?}, found {found:?})")]
     InvalidHeader { expected: String, found: String },
     #[error("standard application error")]
     StdError(Box<dyn std::error::Error + Send + Sync>),
-    
     /// Unknown error
     #[error("unknown error")]
     Unknown,
