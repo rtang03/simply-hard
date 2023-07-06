@@ -73,7 +73,7 @@ tower = "0.4.13"
 tonic-build = "0.9.2"
 
 [features]
-default = ["cli", "server", "otel"]
+default = ["cli", "server"]
 cli = []
 server = ["notify"]
 otel = ["dep:opentelemetry", "dep:tracing-opentelemetry", "dep:opentelemetry-jaeger"]

@@ -26,7 +26,7 @@ struct Cli {
 #[tokio::main]
 async fn main() -> app::Result<()> {
     use tonic::transport::Server;
-    use tracing::{info, info_span};
+    use tracing::info;
 
     app::server::set_up_logging()?;
 
@@ -56,7 +56,8 @@ async fn main() -> app::Result<()> {
     info!("{}", format!("Server listening on {:?}", addr).blue());
 
     let server = Server::builder()
-        .trace_fn(|_| info_span!("bootstrap_echo_server"))
+        // FIXME: this is not useful
+        // .trace_fn(|_| info_span!("serving_echo_server"))
         .add_service(protobuffer::echo_server::EchoServer::new(simply_server))
         .serve_with_shutdown(addr, graceful_shutdown);
 

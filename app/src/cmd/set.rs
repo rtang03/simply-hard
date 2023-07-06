@@ -41,7 +41,7 @@ impl Set {
     /// Returns the `Set` value on success. If the frame is malformed, `Err` is
     /// returned.
     ///
-    #[instrument(skip(self, repository, conn))]
+    #[instrument(skip(self, repository, conn), name = "db_set_value")]
     pub(crate) async fn apply<C>(
         self,
         repository: &PersonRepository,

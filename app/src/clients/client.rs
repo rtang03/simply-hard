@@ -11,6 +11,8 @@ use tokio_stream::{Stream, StreamExt};
 use tonic::{codegen::StdError, transport::Channel, Request};
 use tracing::{error, info, instrument};
 #[cfg(feature = "otel")]
+use tracing::{info_span, Instrument};
+#[cfg(feature = "otel")]
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[cfg(feature = "otel")]
@@ -34,30 +36,12 @@ pub struct Client {
 }
 
 impl Client {
-    #[cfg(not(feature = "otel"))]
     pub async fn connect<D>(addr: D) -> crate::Result<Client>
     where
         D: TryInto<tonic::transport::Endpoint>,
         D::Error: Into<StdError>,
     {
         match EchoClient::connect(addr).await {
-            Ok(echo_client) => Ok(Client { echo_client }),
-            Err(err) => Err(AppError::TonicError(err)),
-        }
-    }
-
-    #[cfg(feature = "otel")]
-    pub async fn connect<D>(addr: D) -> crate::Result<Client>
-    where
-        D: TryInto<tonic::transport::Endpoint>,
-        D::Error: Into<StdError>,
-    {
-        use tracing::{info_span, Instrument};
-
-        match EchoClient::connect(addr)
-            .instrument(info_span!("client connect"))
-            .await
-        {
             Ok(echo_client) => Ok(Client { echo_client }),
             Err(err) => Err(AppError::TonicError(err)),
         }
@@ -70,30 +54,44 @@ impl Client {
         })
     }
 
+    /// noops
+    #[cfg(not(feature = "otel"))]
+    fn inject_context(_request: &mut Request<KeyValueRequest>) {}
+
+    /// inject context for propagator
     #[cfg(feature = "otel")]
-    #[instrument(skip(self, key))]
-    pub async fn get_value(&mut self, key: String) {
-        use tracing::{info_span, Instrument};
-
-        let mut request = Request::new(KeyValueRequest { key, value: None });
-        info!(
-            message = format!("{}", "Sending get_value request".blue()),
-            key = %request.get_ref().key,
-        );
-
+    fn inject_context(request: &mut Request<KeyValueRequest>) {
         opentelemetry::global::get_text_map_propagator(|propagator| {
             propagator.inject_context(
                 &tracing::Span::current().context(),
                 &mut MetadataMap(request.metadata_mut()),
             )
         });
+    }
 
-        match self
+    #[instrument(skip(self, key), name = "command_get_value")]
+    pub async fn get_value(&mut self, key: String) {
+        let mut request: Request<KeyValueRequest> =
+            Request::new(KeyValueRequest { key, value: None });
+
+        info!(
+            message = format!("{}", "Sending get_value request".blue()),
+            key = %request.get_ref().key,
+        );
+
+        Self::inject_context(&mut request);
+
+        #[cfg(feature = "otel")]
+        let submit_get_value_request = self
             .echo_client
             .get_value(request)
-            .instrument(info_span!("send_get_value_request"))
-            .await
-        {
+            .instrument(info_span!("submit_get_value_request"))
+            .await;
+
+        #[cfg(not(feature = "otel"))]
+        let submit_get_value_request = self.echo_client.get_value(request).await;
+
+        match submit_get_value_request {
             Ok(response) => {
                 let message = match response.get_ref().error.clone() {
                     Some(err) => format!("\n{}", err.red()),
@@ -109,18 +107,31 @@ impl Client {
         }
     }
 
-    #[instrument(skip(self, key, value))]
+    #[instrument(skip(self, key, value), name = "command_set_value")]
     pub async fn set_value(&mut self, key: String, value: String) {
-        let request = Request::new(KeyValueRequest {
+        let mut request = Request::new(KeyValueRequest {
             key,
             value: Some(value),
         });
+
         info!(
             message = format!("{}", "Sending set_value request".blue()),
             key = %request.get_ref().key,
         );
 
-        match self.echo_client.set_value(request).await {
+        Self::inject_context(&mut request);
+
+        #[cfg(feature = "otel")]
+        let submit_set_value_request = self
+            .echo_client
+            .set_value(request)
+            .instrument(info_span!("submit_set_value_request"))
+            .await;
+
+        #[cfg(not(feature = "otel"))]
+        let submit_set_value_request = self.echo_client.set_value(request).await;
+
+        match submit_set_value_request {
             Ok(response) => {
                 let message = match response.get_ref().error.clone() {
                     Some(err) => format!("\n{}", err.red()),
