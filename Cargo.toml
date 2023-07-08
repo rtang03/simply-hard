@@ -1,5 +1,5 @@
 [workspace]
-members = ["app"]
+members = ["app", "identity"]
 
 # https://www.youtube.com/watch?v=b2qe3L4BX-Y&list=WL&index=51&t=27s
 # https://github.com/johnthagen/min-sized-rust
