@@ -1,3 +1,5 @@
+pub mod constraints;
+
 use ark_crypto_primitives::signature::schnorr::{PublicKey, SecretKey};
 use ark_ed_on_bls12_381::EdwardsProjective as JubJub;
 use ark_ff::{biginteger::BigInteger64 as B, BigInteger as _};

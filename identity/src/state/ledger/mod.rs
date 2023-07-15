@@ -1,3 +1,5 @@
+pub mod constraints;
+
 use super::{
     account::{AccountId, AccountInformation, AccountPublicKey, AccountSecretKey, Nonce},
     transaction::Transaction,
@@ -29,7 +31,7 @@ pub struct Parameters {
 
 impl Parameters {
     pub fn sample<R: Rng>(rng: &mut R) -> Self {
-        let sig_params = <Schnorr<JubJub, Blake2s> as SignatureScheme>::setup(rng).unwrap();
+        let sig_params: <Schnorr<ark_ec::twisted_edwards::Projective<ark_ed_on_bls12_381::JubjubConfig>, blake2::digest::core_api::CoreWrapper<blake2::digest::core_api::CtVariableCoreWrapper<blake2::Blake2sVarCore, _>>> as SignatureScheme>::Parameters = <Schnorr<JubJub, Blake2s> as SignatureScheme>::setup(rng).unwrap();
         let leaf_crh_params = <LeafH as CRHScheme>::setup(rng).unwrap();
         let two_to_one_crh_params = <CompressH as TwoToOneCRHScheme>::setup(rng).unwrap();
         Self {
@@ -131,6 +133,8 @@ impl State {
         let tree = &mut self.account_merkle_tree;
         self.id_to_account_info.get_mut(&id).map(|account_info| {
             account_info.nonce.checked_increment().unwrap();
+            // FIXME: below does not work
+            // let mut uncompressed_bytes = to_uncompressed_bytes!(account_info).unwrap();
             let mut uncompressed_bytes = Vec::new();
             account_info
                 .serialize_uncompressed(&mut uncompressed_bytes)
