@@ -28,6 +28,7 @@ tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
 blake2s_simd = "1.0.1"
 hex = "0.4.3"
+thiserror = "1.0.43"
 
 [features]
 default = []

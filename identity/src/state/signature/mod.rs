@@ -1,7 +1,8 @@
 pub mod bls12_381;
+pub mod constraints;
 pub mod hash;
 
-pub use self::bls12_381::{PublicKey, SecretKey, Signature};
+pub use self::bls12_381::{Parser, PublicKey, SecretKey, Signature};
 use crate::Error;
 
 // NOTE: this implementation is not compliant with irtf spec
@@ -14,28 +15,37 @@ use crate::Error;
 
 pub trait SignatureScheme {
     type Parameters: Clone;
+    type PublicKey: Parser + Clone;
+    type SecretKey: Parser + Clone;
+    type Signature: Parser + Clone;
 
     fn setup(seed: [u8; 32]) -> Result<Self::Parameters, Error>;
 
-    fn keygen(parameters: &Self::Parameters) -> Result<(PublicKey, SecretKey), Error>;
+    fn keygen(parameters: &Self::Parameters) -> Result<(Self::PublicKey, Self::SecretKey), Error>;
+
+    fn load_secret_key(secret_key: String) -> Self::SecretKey;
+
+    fn load_public_key(public_key: String) -> Self::PublicKey;
+
+    fn load_signature(signature: String) -> Self::Signature;
 
     fn sign(
         parameters: &Self::Parameters,
-        sk: &SecretKey,
+        sk: &Self::SecretKey,
         message: &[u8],
-    ) -> Result<Signature, Error>;
+    ) -> Result<Self::Signature, Error>;
 
     fn verify(
         parameters: &Self::Parameters,
-        pk: &PublicKey,
+        pk: &Self::PublicKey,
         message: &[u8],
-        signature: &Signature,
+        signature: &Self::Signature,
     ) -> Result<bool, Error>;
 }
 
 #[cfg(test)]
 mod test {
-    pub use self::bls12_381::{PublicKey, SecretKey, Signature};
+    pub use self::bls12_381::{Parser, PublicKey, SecretKey, Signature};
     use crate::state::signature::{bls12_381, SignatureScheme};
 
     fn sign_and_verify<S: SignatureScheme>(message: &[u8]) {
@@ -44,20 +54,35 @@ mod test {
             1, 1, 1,
         ])
         .unwrap();
+
         let (pk, sk) = S::keygen(&parameters).unwrap();
 
         // reload secret_key from String
-        let loaded_secretkey = SecretKey::new(sk.get_string());
+        let secret_key_string = sk.get_string();
 
-        let sig = S::sign(&parameters, &loaded_secretkey, message).unwrap();
+        // NOTE: in actual implementation, add here: can save secret_key logic
+
+        let loaded_secret_key = S::load_secret_key(secret_key_string);
+
+        let sig = S::sign(&parameters, &loaded_secret_key, message).unwrap();
 
         println!("public key {:?}", pk.get_string());
         println!("secret key {:?}", sk.get_string());
         println!("signature {:?}", sig.get_string());
 
         // reload signature from String
-        let loaded_signature = Signature::new(sig.get_string());
-        let loaded_publickey = PublicKey::new(pk.get_string());
+        let signature_string = sig.get_string();
+
+        // NOTE: in actual implementation, add here: can save public_key logic
+
+        let loaded_signature = S::load_signature(signature_string);
+
+        // reload public_key from String
+        let public_key_string = pk.get_string();
+
+        // NOTE: in actual implementation, add here: can save public_key logic
+
+        let loaded_publickey = S::load_public_key(public_key_string);
 
         assert!(S::verify(&parameters, &loaded_publickey, message, &loaded_signature).unwrap());
     }
