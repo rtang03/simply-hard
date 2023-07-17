@@ -42,7 +42,10 @@ impl PublicKey {
     }
 
     pub fn new(pk: String) -> Self {
-        // TODO: validate pk is 96 bytes length
+        if pk.len() != 192 {
+            return Self(G2Affine::zero());
+        }
+
         let decoded = match hex::decode(pk) {
             Ok(val) => val,
             Err(_) => vec![0u8; 96],
@@ -106,7 +109,10 @@ impl SecretKey {
     }
 
     pub fn new(sk: String) -> Self {
-        // TODO: validate sk is 32 bytes length
+        if sk.len() != 64 {
+            return Self(BigInteger256::zero());
+        }
+
         let decoded = match hex::decode(sk) {
             Ok(val) => val,
             Err(_) => vec![0u8; 32],
@@ -167,7 +173,10 @@ impl Signature {
     }
 
     pub fn new(sig: String) -> Self {
-        // TODO: validate sig is 48 bytes length
+        if sig.len() != 96 {
+            return Self(G1Affine::zero());
+        }
+
         let decoded = match hex::decode(sig) {
             Ok(val) => val,
             Err(_) => vec![0u8; 48],
