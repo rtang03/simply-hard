@@ -16,11 +16,8 @@ impl Window for ZkHackPedersenWindow {
 
 // https://github.com/kobigurk/zkhack-bls-pedersen/blob/main/src/hash.rs
 
-pub fn hash_to_curve(msg: &[u8]) -> (Vec<u8>, G1Affine) {
-    let rng_pedersen = &mut ChaCha20Rng::from_seed([
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1,
-    ]);
+pub fn hash_to_curve(seed: [u8; 32], msg: &[u8]) -> (Vec<u8>, G1Affine) {
+    let rng_pedersen = &mut ChaCha20Rng::from_seed(seed);
     let parameters = CRH::<G1Projective, ZkHackPedersenWindow>::setup(rng_pedersen).unwrap();
     let b2hash = blake2s_simd::blake2s(msg);
     (

@@ -20,15 +20,14 @@ ark-r1cs-std = "0.4.0"
 ark-relations = "0.4.0"
 ark-serialize = "0.4.2"
 ark-std = { version = "0.4.0", features = ["std", "getrandom"] }
-derivative = { version = "2.2.0", features = ["use_core"] }
 digest = { version = "0.10.7", default-features = false }
 rand = { version = "0.8.5", features = ["std_rng"] }
 rand_chacha = "0.3.1"
 rand_core = "0.6.4"
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
-hex = "0.4.3"
 blake2s_simd = "1.0.1"
+hex = "0.4.3"
 
 [features]
 default = []

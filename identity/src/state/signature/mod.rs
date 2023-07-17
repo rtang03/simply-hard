@@ -1,36 +1,28 @@
 pub mod bls12_381;
 pub mod hash;
 
+pub use self::bls12_381::{PublicKey, SecretKey, Signature};
+use crate::Error;
+
 // NOTE: this implementation is not compliant with irtf spec
 // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bls-signature-05
 // https://github.com/arkworks-rs/std/blob/master/src/rand_helper.rs
 // https://github.com/arkworks-rs/algebra/blob/master/ff/README.md
 // https://github.com/kobigurk/zkhack-bls-pedersen
 
-use crate::Error;
-use ark_serialize::CanonicalSerialize;
-use ark_std::rand::Rng;
-
-use self::bls12_381::{PublicKey, Signature};
+// FIXME: need to handle rogue-key attack
 
 pub trait SignatureScheme {
     type Parameters: Clone;
-    // type PublicKey: CanonicalSerialize + Hash + Eq + Clone + Default + std::fmt::Debug;
-    type SecretKey: CanonicalSerialize + Clone + std::fmt::Debug;
-    // type Signature: Clone + std::fmt::Debug;
 
-    fn setup<R: Rng>(rng: &mut R) -> Result<Self::Parameters, Error>;
+    fn setup(seed: [u8; 32]) -> Result<Self::Parameters, Error>;
 
-    fn keygen<R: Rng>(
+    fn keygen(parameters: &Self::Parameters) -> Result<(PublicKey, SecretKey), Error>;
+
+    fn sign(
         parameters: &Self::Parameters,
-        rng: &mut R,
-    ) -> Result<(PublicKey, Self::SecretKey), Error>;
-
-    fn sign<R: Rng>(
-        parameters: &Self::Parameters,
-        sk: &Self::SecretKey,
+        sk: &SecretKey,
         message: &[u8],
-        rng: &mut R,
     ) -> Result<Signature, Error>;
 
     fn verify(
@@ -43,45 +35,49 @@ pub trait SignatureScheme {
 
 #[cfg(test)]
 mod test {
+    pub use self::bls12_381::{PublicKey, SecretKey, Signature};
     use crate::state::signature::{bls12_381, SignatureScheme};
-    use ark_bls12_381::{G1Projective, G2Projective};
-    use ark_serialize::CanonicalSerialize;
-    use ark_std::test_rng;
-    use blake2::Blake2s256 as Blake2s;
 
     fn sign_and_verify<S: SignatureScheme>(message: &[u8]) {
-        let rng = &mut test_rng();
-        let parameters = S::setup::<_>(rng).unwrap();
-        let (pk, sk) = S::keygen(&parameters, rng).unwrap();
-        let sig = S::sign(&parameters, &sk, message, rng).unwrap();
-        let mut pk_bytes = Vec::new();
-        pk.serialize_uncompressed(&mut pk_bytes).unwrap();
-        println!("public key {:?}", pk_bytes);
-        let mut sig_bytes = Vec::new();
-        sig.serialize_uncompressed(&mut sig_bytes).unwrap();
-        println!("signature {:?}", sig_bytes);
-        assert!(S::verify(&parameters, &pk, message, &sig).unwrap());
+        let parameters = S::setup([
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1,
+        ])
+        .unwrap();
+        let (pk, sk) = S::keygen(&parameters).unwrap();
+
+        // reload secret_key from String
+        let loaded_secretkey = SecretKey::new(sk.get_string());
+
+        let sig = S::sign(&parameters, &loaded_secretkey, message).unwrap();
+
+        println!("public key {:?}", pk.get_string());
+        println!("secret key {:?}", sk.get_string());
+        println!("signature {:?}", sig.get_string());
+
+        // reload signature from String
+        let loaded_signature = Signature::new(sig.get_string());
+        let loaded_publickey = PublicKey::new(pk.get_string());
+
+        assert!(S::verify(&parameters, &loaded_publickey, message, &loaded_signature).unwrap());
     }
 
     fn failed_verification<S: SignatureScheme>(message: &[u8], bad_message: &[u8]) {
-        let rng = &mut test_rng();
-        let parameters = S::setup::<_>(rng).unwrap();
-        let (pk, sk) = S::keygen(&parameters, rng).unwrap();
-        let sig = S::sign(&parameters, &sk, message, rng).unwrap();
+        let parameters = S::setup([
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1,
+        ])
+        .unwrap();
+        let (pk, sk) = S::keygen(&parameters).unwrap();
+        let sig = S::sign(&parameters, &sk, message).unwrap();
         assert!(!S::verify(&parameters, &pk, bad_message, &sig).unwrap());
     }
 
     #[test]
     fn test_bls12381_signature() {
         let message = "Hi, I am a Schnorr signature!";
-        let _rng = &mut test_rng();
-        sign_and_verify::<bls12_381::Bls12381<G1Projective, G2Projective, Blake2s>>(
-            message.as_bytes(),
-        );
-        failed_verification::<bls12_381::Bls12381<G1Projective, G2Projective, Blake2s>>(
-            message.as_bytes(),
-            "Bad message".as_bytes(),
-        );
+        sign_and_verify::<bls12_381::Bls12381>(message.as_bytes());
+        failed_verification::<bls12_381::Bls12381>(message.as_bytes(), "Bad message".as_bytes());
     }
 }
 
