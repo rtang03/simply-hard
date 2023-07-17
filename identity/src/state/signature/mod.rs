@@ -1,6 +1,8 @@
 pub mod bls12_381;
 pub mod hash;
 
+// NOTE: this implementation is not compliant with irtf spec
+// https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bls-signature-05
 // https://github.com/arkworks-rs/std/blob/master/src/rand_helper.rs
 // https://github.com/arkworks-rs/algebra/blob/master/ff/README.md
 // https://github.com/kobigurk/zkhack-bls-pedersen
@@ -61,16 +63,27 @@ mod test {
         assert!(S::verify(&parameters, &pk, message, &sig).unwrap());
     }
 
+    fn failed_verification<S: SignatureScheme>(message: &[u8], bad_message: &[u8]) {
+        let rng = &mut test_rng();
+        let parameters = S::setup::<_>(rng).unwrap();
+        let (pk, sk) = S::keygen(&parameters, rng).unwrap();
+        let sig = S::sign(&parameters, &sk, message, rng).unwrap();
+        assert!(!S::verify(&parameters, &pk, bad_message, &sig).unwrap());
+    }
+
     #[test]
-    fn test_keygen() {
+    fn test_bls12381_signature() {
         let message = "Hi, I am a Schnorr signature!";
         let _rng = &mut test_rng();
         sign_and_verify::<bls12_381::Bls12381<G1Projective, G2Projective, Blake2s>>(
             message.as_bytes(),
         );
+        failed_verification::<bls12_381::Bls12381<G1Projective, G2Projective, Blake2s>>(
+            message.as_bytes(),
+            "Bad message".as_bytes(),
+        );
     }
 }
-
 
 // FIXME: below code may be useful for Ed_on_bls12_381
 // But no use here while using BLS12381
