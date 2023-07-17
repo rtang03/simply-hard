@@ -7,60 +7,73 @@ pub mod hash;
 
 use crate::Error;
 use ark_serialize::CanonicalSerialize;
-use ark_std::hash::Hash;
 use ark_std::rand::Rng;
+
+use self::bls12_381::{PublicKey, Signature};
 
 pub trait SignatureScheme {
     type Parameters: Clone;
-    type PublicKey: CanonicalSerialize + Hash + Eq + Clone + Default + std::fmt::Debug;
-    type SecretKey: CanonicalSerialize + Clone + Default + std::fmt::Debug;
-    type Signature: Clone + Default;
+    // type PublicKey: CanonicalSerialize + Hash + Eq + Clone + Default + std::fmt::Debug;
+    type SecretKey: CanonicalSerialize + Clone + std::fmt::Debug;
+    // type Signature: Clone + std::fmt::Debug;
 
     fn setup<R: Rng>(rng: &mut R) -> Result<Self::Parameters, Error>;
 
     fn keygen<R: Rng>(
         parameters: &Self::Parameters,
         rng: &mut R,
-    ) -> Result<(Self::PublicKey, Self::SecretKey), Error>;
+    ) -> Result<(PublicKey, Self::SecretKey), Error>;
 
     fn sign<R: Rng>(
         parameters: &Self::Parameters,
         sk: &Self::SecretKey,
         message: &[u8],
         rng: &mut R,
-    ) -> Result<Self::Signature, Error>;
+    ) -> Result<Signature, Error>;
 
     fn verify(
         parameters: &Self::Parameters,
-        pk: &Self::PublicKey,
+        pk: &PublicKey,
         message: &[u8],
-        signature: &Self::Signature,
+        signature: &Signature,
     ) -> Result<bool, Error>;
 }
 
 #[cfg(test)]
 mod test {
     use crate::state::signature::{bls12_381, SignatureScheme};
-    use ark_ed_on_bls12_381::EdwardsProjective as JubJub;
+    use ark_bls12_381::{G1Projective, G2Projective};
+    use ark_serialize::CanonicalSerialize;
     use ark_std::test_rng;
     use blake2::Blake2s256 as Blake2s;
 
-    fn sign_and_verify<S: SignatureScheme>(_message: &[u8]) {
+    fn sign_and_verify<S: SignatureScheme>(message: &[u8]) {
         let rng = &mut test_rng();
         let parameters = S::setup::<_>(rng).unwrap();
         let (pk, sk) = S::keygen(&parameters, rng).unwrap();
-        println!("pk {:?}", pk);
-        println!("sk {:?}", sk);
+        let sig = S::sign(&parameters, &sk, message, rng).unwrap();
+        let mut pk_bytes = Vec::new();
+        pk.serialize_uncompressed(&mut pk_bytes).unwrap();
+        println!("public key {:?}", pk_bytes);
+        let mut sig_bytes = Vec::new();
+        sig.serialize_uncompressed(&mut sig_bytes).unwrap();
+        println!("signature {:?}", sig_bytes);
+        assert!(S::verify(&parameters, &pk, message, &sig).unwrap());
     }
 
     #[test]
     fn test_keygen() {
         let message = "Hi, I am a Schnorr signature!";
         let _rng = &mut test_rng();
-        sign_and_verify::<bls12_381::Bls12381<JubJub, Blake2s>>(message.as_bytes());
+        sign_and_verify::<bls12_381::Bls12381<G1Projective, G2Projective, Blake2s>>(
+            message.as_bytes(),
+        );
     }
 }
 
+
+// FIXME: below code may be useful for Ed_on_bls12_381
+// But no use here while using BLS12381
 // #[test]
 // fn test_curve() -> Result<(), ark_relations::r1cs::SynthesisError> {
 //     use ark_ed_on_bls12_381::{constraints::*, *};
